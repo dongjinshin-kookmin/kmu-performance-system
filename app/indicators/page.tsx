@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { Reveal } from "@/components/ui";
 
-export const dynamic = "force-dynamic";
-
 const CARDS = [
   { href: "/indicators/faculty", icon: "🎓", title: "교원 지표·배점표", color: "var(--area-R)",
     desc: "IF 계단배점 · 저자환산 · 트랙 가중 · 등급정책 · 지표 마스터", tags: ["R01 계단배점", "트랙 가중", "특허 단가"] },

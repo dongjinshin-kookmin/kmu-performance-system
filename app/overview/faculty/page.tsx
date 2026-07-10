@@ -2,13 +2,13 @@ import { getSession } from "@/lib/rbac";
 import { overviewFaculty } from "@/lib/queries";
 import { Reveal } from "@/components/ui";
 import { OverviewMap } from "@/components/OverviewMap";
-
-export const dynamic = "force-dynamic";
+import { IS_EXPORT } from "@/lib/runtime";
 
 export default async function FacultyOverview({ searchParams }: { searchParams: Promise<{ sel?: string }> }) {
   const s = await getSession();
   const data = overviewFaculty(s);
-  const sel = Number((await searchParams).sel) || null;
+  // 정적 export에서는 searchParams를 읽을 수 없음. 선택은 OverviewMap 내부 상태로 처리(클릭 정상 동작).
+  const sel = IS_EXPORT ? null : (Number((await searchParams).sel) || null);
   return (
     <main className="wrap" style={{ padding: "2rem 0 5rem" }}>
       <Reveal>

@@ -6,8 +6,6 @@ import { GROUP_LABEL } from "@/lib/colors";
 import { won } from "@/lib/format";
 import { getSession } from "@/lib/rbac";
 
-export const dynamic = "force-dynamic";
-
 export default async function Dashboard() {
   const s = await getSession();
   const k = instituteKpis();

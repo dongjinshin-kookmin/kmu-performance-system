@@ -5,14 +5,13 @@ import { Reveal, Meter, GradeBadge } from "@/components/ui";
 import { GradeStack } from "@/components/charts";
 import { BSC, DEPT_TYPE_LABEL } from "@/lib/colors";
 import { DEPT_TYPES } from "@/generator/staffData";
-
-export const dynamic = "force-dynamic";
+import { IS_EXPORT } from "@/lib/runtime";
 
 const KPI_TARGET = new Map<string, string>();
 for (const dt of DEPT_TYPES) for (const k of dt.kpis) KPI_TARGET.set(k.code, k.target);
 
 export default async function Units({ searchParams }: { searchParams: Promise<{ type?: string; dept?: string }> }) {
-  const sp = await searchParams;
+  const sp = IS_EXPORT ? {} : await searchParams;
   const s = await getSession();
   const viewer = getViewer(s);
   const scoped = s.role === "TEAM_LEAD" || s.role === "DEPT_HEAD";

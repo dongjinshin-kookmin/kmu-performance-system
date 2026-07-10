@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { getSession } from "@/lib/rbac";
-import { evalById, workflowSteps, canViewPerson } from "@/lib/queries";
+import { evalById, workflowSteps, canViewPerson, workflowStaticIds } from "@/lib/queries";
 import { Reveal, GradeBadge } from "@/components/ui";
 import { Stepper } from "@/components/Stepper";
 import { STATUS_LABEL, VERSION_LABEL, TRACK_LABEL } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
+export function generateStaticParams() {
+  return workflowStaticIds().map((id) => ({ id: String(id) }));
+}
 
 export default async function WorkflowDetail({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);

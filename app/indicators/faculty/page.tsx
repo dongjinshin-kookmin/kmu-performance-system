@@ -4,8 +4,6 @@ import { Reveal, Meter, Stagger, StaggerItem } from "@/components/ui";
 import { AREA, AreaKey } from "@/lib/colors";
 import { BAND_LABEL } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
-
 const STAGE: Record<string, { label: string; color: string }> = {
   SCORE: { label: "본평가", color: "var(--area-R)" },
   BONUS: { label: "가점", color: "var(--grade-S)" },

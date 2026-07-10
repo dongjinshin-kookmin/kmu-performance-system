@@ -3,15 +3,14 @@ import { corrMatrix, linreg, pearson } from "@/lib/stats";
 import { Reveal } from "@/components/ui";
 import { Heatmap, Scatterplot } from "@/components/Correlation";
 import { GROUP_LABEL } from "@/lib/colors";
-
-export const dynamic = "force-dynamic";
+import { IS_EXPORT } from "@/lib/runtime";
 
 const COLOR: Record<string, string> = {
   G_HSSP: "var(--area-R)", G_ENA: "var(--area-E)", G_ENB: "var(--area-I)", G_ENC: "var(--area-S)", G_ART: "var(--grade-S)",
 };
 
 export default async function FacultyAnalysis({ searchParams }: { searchParams: Promise<{ x?: string; y?: string }> }) {
-  const sp = await searchParams;
+  const sp = IS_EXPORT ? {} : await searchParams;
   const { metrics, rows } = analysisFacultyData();
   const matrix = corrMatrix(metrics, rows);
   const idx = (k: string, d: number) => { const i = metrics.findIndex((m) => m.key === k); return i < 0 ? d : i; };

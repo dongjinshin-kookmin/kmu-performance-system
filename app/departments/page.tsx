@@ -4,11 +4,10 @@ import { deptRanking, deptScores, getViewer } from "@/lib/queries";
 import { Reveal, Meter, GradeBadge, CountUp } from "@/components/ui";
 import { DeptStrip, GradeStack } from "@/components/charts";
 import { GROUP_LABEL } from "@/lib/colors";
-
-export const dynamic = "force-dynamic";
+import { IS_EXPORT } from "@/lib/runtime";
 
 export default async function Departments({ searchParams }: { searchParams: Promise<{ group?: string; dept?: string }> }) {
-  const sp = await searchParams;
+  const sp = IS_EXPORT ? {} : await searchParams;
   const s = await getSession();
   const viewer = getViewer(s);
   const isChair = s.role === "DEPT_CHAIR";

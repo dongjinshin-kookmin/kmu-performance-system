@@ -1,5 +1,5 @@
 import { getDb } from "./db";
-import { Session, RoleCode, ROLES } from "./rbac";
+import { Session, RoleCode, ROLES, DEFAULT_SESSION } from "./rbac";
 import { BAND_LABEL, ROLE_KO } from "./format";
 
 const YEAR = 2025;
@@ -385,6 +385,22 @@ export function evalById(evalId: number) {
 export function workflowSteps(evalId: number) {
   const db = getDb();
   return db.prepare(`SELECT step_no step, from_status f, to_status t, actor_role actor, action, comment, acted_at at FROM eval_step_log WHERE eval_id=? ORDER BY log_id`).all(evalId) as any[];
+}
+
+// ─────── 정적 export(generateStaticParams)용 전체 id 목록 ───────
+export function allFacultyIds(): number[] {
+  const db = getDb();
+  return (db.prepare(`SELECT person_id id FROM prof_profile ORDER BY person_id`).all() as any[]).map((r) => r.id);
+}
+export function allStaffIds(): number[] {
+  const db = getDb();
+  return (db.prepare(`SELECT person_id id FROM staff_profile ORDER BY person_id`).all() as any[]).map((r) => r.id);
+}
+/** 워크플로 목록에서 링크되는 평가 건(교원+직원 대기열 상한 내) id */
+export function workflowStaticIds(): number[] {
+  const fac = workflowQueue(DEFAULT_SESSION).map((r: any) => r.id as number);
+  const stf = staffWorkflowQueue(DEFAULT_SESSION).map((r: any) => r.id as number);
+  return Array.from(new Set([...fac, ...stf]));
 }
 
 // ═══════════════════════════ 직원(STAFF) ═══════════════════════════

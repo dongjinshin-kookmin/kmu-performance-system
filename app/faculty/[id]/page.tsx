@@ -3,7 +3,7 @@ import { getSession } from "@/lib/rbac";
 import {
   canViewPerson, facultyHeader, facultyEval, facultyAreas, facultyTrend,
   compositePercentile, bonusBreakdown, facultyIndicatorSummary, drilldown, pickerFaculty,
-  facultyRanks, facultyScoreMax,
+  facultyRanks, facultyScoreMax, allFacultyIds,
 } from "@/lib/queries";
 import { Reveal, ArcGauge, GradeBadge, Meter, CountUp, Delta } from "@/components/ui";
 import { AreaRadar, TrendChart } from "@/components/charts";
@@ -13,7 +13,9 @@ import { PersonPicker } from "@/components/PersonPicker";
 import { AREA, AreaKey } from "@/lib/colors";
 import { TRACK_LABEL, VERSION_LABEL } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
+export function generateStaticParams() {
+  return allFacultyIds().map((id) => ({ id: String(id) }));
+}
 
 export default async function FacultyCard({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);

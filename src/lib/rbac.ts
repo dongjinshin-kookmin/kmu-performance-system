@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { IS_EXPORT } from "./runtime";
 
 export type RoleCode = "FACULTY" | "DEPT_CHAIR" | "EVAL_COMMITTEE" | "HR_TEAM" | "PRESIDENT" | "STAFF" | "TEAM_LEAD" | "DEPT_HEAD";
 
@@ -64,6 +64,9 @@ export interface Session {
 export const DEFAULT_SESSION: Session = { role: "HR_TEAM", viewer: null };
 
 export async function getSession(): Promise<Session> {
+  // 정적 export(GitHub Pages)에서는 요청 쿠키를 읽을 수 없으므로 기본 세션(인사팀) 고정.
+  if (IS_EXPORT) return DEFAULT_SESSION;
+  const { cookies } = await import("next/headers");
   const c = (await cookies()).get("rbac")?.value;
   if (!c) return DEFAULT_SESSION;
   try {

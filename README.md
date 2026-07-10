@@ -11,6 +11,28 @@
 - 설계 근거: `../../02_기획/04_데이터모델.md`(스키마), `../../02_기획/01_교수지표체계.md`(v1.2), `../../02_기획/06_파라미터변경_v1.2.md`(마이그레이션 스펙)
 - 설계와 달라진 점·캘리브레이션 실측·v1.2 마이그레이션: `../../02_기획/05_구현노트_Phase2.md`(§7)
 
+## 🔗 라이브 데모
+
+**https://dongjinshin-kookmin.github.io/kmu-performance-system/**
+
+Next.js 정적 export(`output: 'export'`) 산출물을 GitHub Pages로 서빙합니다.
+모든 서버 컴포넌트 쿼리는 **빌드 타임에 SQLite에서 실행**되어 정적 HTML로 굳으며,
+교원 600명·직원 100명 성과카드를 포함해 전 화면이 사전 생성됩니다(약 830페이지).
+
+빌드: `GITHUB_PAGES=true BASE_PATH=/kmu-performance-system npm run build` → `out/` 생성.
+CI 자동 배포용 GitHub Actions 워크플로가 `.github/workflows/deploy.yml`에 준비되어 있습니다
+(`main` push → db:rebuild → export → Pages 배포). 이 파일을 원격에 커밋하려면 토큰에
+`workflow` 스코프가 필요합니다(`gh auth refresh -s workflow`).
+
+### 데모 제약 (정적 배포)
+정적 사이트에는 서버가 없어 요청별 쿠키/세션 분기가 불가능합니다. 따라서 데모는:
+- **역할 = 인사팀(전사 열람) 고정** — 사이드바 역할 전환 UI는 로컬 실행에서만 동작합니다.
+  (총장 뷰 개인정보 마스킹, 교수 본인 SELF 범위 제한 등 RBAC 시연은 로컬에서 확인)
+- 직원 성과카드의 **반기 선택은 최신 반기 고정** (추이 차트는 전 반기 표시).
+- 그 외 드릴다운·상관분석 산점도·성과맵 등 **클라이언트 상호작용은 정상 동작**합니다.
+
+전체 기능(역할 전환·반기 전환·쿠키 RBAC)은 아래 **로컬 실행**으로 확인하세요.
+
 ## 기술 스택
 - Next.js 15 (App Router, TypeScript) · React 19
 - better-sqlite3 (동기 임베디드 DB) — 스키마는 마이그레이션 SQL + 초기화 스크립트로 단순 관리

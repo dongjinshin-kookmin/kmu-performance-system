@@ -3,8 +3,6 @@ import { staffIndicatorMaster, staffAreaMaxRows, staffCoefRows, staffGradeCuts }
 import { Reveal, Meter } from "@/components/ui";
 import { STAFF_AREA } from "@/lib/colors";
 
-export const dynamic = "force-dynamic";
-
 const LAYER: Record<string, { label: string; color: string }> = {
   FIXED: { label: "🟦확정", color: "var(--ok)" }, ASSUME: { label: "🟨가정", color: "var(--warn)" }, PROPOSE: { label: "🟩제안", color: "var(--accent)" },
 };

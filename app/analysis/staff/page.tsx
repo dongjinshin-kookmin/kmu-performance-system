@@ -3,15 +3,14 @@ import { corrMatrix, linreg, pearson } from "@/lib/stats";
 import { Reveal } from "@/components/ui";
 import { Heatmap, Scatterplot } from "@/components/Correlation";
 import { DEPT_TYPE_LABEL } from "@/lib/colors";
-
-export const dynamic = "force-dynamic";
+import { IS_EXPORT } from "@/lib/runtime";
 
 const PAL = ["var(--area-R)", "var(--area-E)", "var(--area-I)", "var(--area-S)", "var(--grade-S)", "var(--grade-C)", "var(--accent)", "var(--grade-D)"];
 const COLOR: Record<string, string> = {};
 Object.keys(DEPT_TYPE_LABEL).forEach((k, i) => { if (i < 8) COLOR[k] = PAL[i]; });
 
 export default async function StaffAnalysis({ searchParams }: { searchParams: Promise<{ x?: string; y?: string }> }) {
-  const sp = await searchParams;
+  const sp = IS_EXPORT ? {} : await searchParams;
   const { metrics, rows } = analysisStaffData();
   const matrix = corrMatrix(metrics, rows);
   const idx = (k: string, d: number) => { const i = metrics.findIndex((m) => m.key === k); return i < 0 ? d : i; };

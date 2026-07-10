@@ -4,8 +4,6 @@ import { workflowQueue, staffWorkflowQueue } from "@/lib/queries";
 import { Reveal, GradeBadge, Stagger, StaggerItem } from "@/components/ui";
 import { STATUS_LABEL, VERSION_LABEL } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
-
 const STATUS_COLOR: Record<string, string> = {
   FINALIZED: "var(--ok)", COMMITTEE: "var(--warn)", NOTIFIED: "var(--area-R)", CHAIR_REVIEW: "var(--area-I)",
 };

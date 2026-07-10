@@ -3,6 +3,7 @@ import { getSession } from "@/lib/rbac";
 import {
   canViewStaff, staffHeader, staffHalves, staffEval, staffAreas, staffTrend,
   staffPercentile, staffMbo, staffActivities, pickerStaff, STAFF_LATEST, staffRanks, staffFeedback, staffWorklog,
+  allStaffIds,
 } from "@/lib/queries";
 import { Reveal, ArcGauge, GradeBadge, Meter, CountUp, Delta } from "@/components/ui";
 import { TrendChart } from "@/components/charts";
@@ -12,8 +13,11 @@ import { WorkCalendar } from "@/components/WorkCalendar";
 import { StaffMbo, StaffActivities } from "@/components/StaffMbo";
 import { PersonPicker } from "@/components/PersonPicker";
 import { STAFF_AREA, DEPT_TYPE_LABEL } from "@/lib/colors";
+import { IS_EXPORT } from "@/lib/runtime";
 
-export const dynamic = "force-dynamic";
+export function generateStaticParams() {
+  return allStaffIds().map((id) => ({ id: String(id) }));
+}
 
 const FAMILY_LABEL: Record<string, string> = { GENERAL: "일반·기술직", FUNCTIONAL: "기능직" };
 const AREA_COLOR: Record<string, string> = {
@@ -23,7 +27,8 @@ const AREA_COLOR: Record<string, string> = {
 
 export default async function StaffCard({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ half?: string }> }) {
   const id = Number((await params).id);
-  const half = Number((await searchParams).half) || STAFF_LATEST;
+  // 정적 export에서는 searchParams를 읽으면 정적 렌더가 불가하므로 최신 반기 고정.
+  const half = IS_EXPORT ? STAFF_LATEST : (Number((await searchParams).half) || STAFF_LATEST);
   const s = await getSession();
   const h = staffHeader(id);
   if (!h) return <Denied reason="존재하지 않는 직원입니다." />;
