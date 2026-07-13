@@ -124,6 +124,9 @@ export function generateEvaluation(
   for (const year of YEARS) {
     const cands: (Cand & { f: FacultyRec; comp: number; bonus: number; areas: ReturnType<typeof computeComposite>["areas"]; py: { R: number; E: number; I: number; S: number } })[] = [];
     for (const f of faculty) {
+      // 신임 교원은 임용연도 이후 사이클만 평가 생성(임용 전 연도 평가 이력 모순 제거).
+      // → 임용연도가 첫 사이클이 되어 Δ·noDelta("직전 평가 없음") 각주가 유의미해짐.
+      if (year < f.appointed_year) continue;
       const py = pymap.get(f.person_id)!.get(year)!;
       const w = p.track.get(f.track)!;
       const { areas, composite } = computeComposite({ R: py.R, E: py.E, I: py.I, S: py.S }, bench[f.field], { R: w.w_R, E: w.w_E, I: w.w_I, S: w.w_S });
@@ -161,8 +164,11 @@ export function generateEvaluation(
         insStep.run(evalId, 4, "SELF_CONFIRM", "CHAIR_REVIEW", "학과장", "APPROVE", "실적 확인");
         insStep.run(evalId, 5, "CHAIR_REVIEW", status, "평가위원", "APPROVE", "정량 확정");
         insAudit.run(null, "STATUS_CHANGE", "fact_evaluation", String(evalId), JSON.stringify({ to: status }), "10.0.0.1");
-        if (status === "NOTIFIED" && rW.bool(0.08))
-          insAppeal.run(evalId, "가점 산정 이의", `${year + 1}-02-20`, rW.bool(0.5) ? "ACCEPTED" : "REJECTED", rW.bool(0.5) ? "가점 +0.5 반영" : "원심 유지", `${year + 1}-02-27`);
+        if (status === "NOTIFIED" && rW.bool(0.08)) {
+          // 처리 결과(resolution)를 상태(status)와 정합되게 생성 — 인용이면 가점 반영, 기각이면 원심 유지.
+          const accepted = rW.bool(0.45);
+          insAppeal.run(evalId, "가점 산정 이의", `${year + 1}-02-20`, accepted ? "ACCEPTED" : "REJECTED", accepted ? "가점 +0.5 반영" : "원심 유지", `${year + 1}-02-27`);
+        }
         evalYearSum += c.score;
         gradeDist[g.rel] = (gradeDist[g.rel] ?? 0) + 1;
       }

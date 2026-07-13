@@ -82,7 +82,7 @@ export function trendByYear() {
     `SELECT e.cycle_id year, ROUND(AVG(e.composite_score+e.bonus_score),1) score,
             (SELECT COUNT(*) FROM act_paper ap JOIN fact_activity fa ON fa.activity_id=ap.activity_id WHERE fa.period_id=e.cycle_id AND ap.grade IN ('SCI','SSCI_AHCI')) sci,
             (SELECT COALESCE(SUM(amount_won),0) FROM act_grant ag JOIN fact_activity fa ON fa.activity_id=ag.activity_id WHERE fa.period_id=e.cycle_id) fund
-     FROM fact_evaluation e GROUP BY e.cycle_id ORDER BY e.cycle_id`
+     FROM fact_evaluation e WHERE e.cycle_id BETWEEN 2021 AND 2025 GROUP BY e.cycle_id ORDER BY e.cycle_id`
   ).all() as { year: number; score: number; sci: number; fund: number }[];
 }
 
@@ -127,6 +127,16 @@ export function facultyHeader(id: number) {
      FROM dim_person p JOIN dim_org o ON o.org_id=p.org_id LEFT JOIN prof_profile pr ON pr.person_id=p.person_id
      WHERE p.person_id=?`
   ).get(id) as any;
+}
+
+/** 소셀 마스킹(MASK_MIN)용 — 같은 조직(학과/부서) 평가 대상 인원 수. n<5면 개인 재식별 위험. */
+export function facultyDeptSize(orgId: number, year = YEAR): number {
+  const db = getDb();
+  return (db.prepare(`SELECT COUNT(*) n FROM fact_evaluation e JOIN dim_person p ON p.person_id=e.person_id WHERE e.cycle_id=? AND p.org_id=?`).get(year, orgId) as any).n;
+}
+export function staffDeptSize(orgId: number, half = STAFF_LATEST): number {
+  const db = getDb();
+  return (db.prepare(`SELECT COUNT(*) n FROM fact_evaluation e JOIN dim_person p ON p.person_id=e.person_id WHERE e.cycle_id=? AND p.org_id=?`).get(half, orgId) as any).n;
 }
 
 export function facultyEval(id: number, year = YEAR) {
@@ -221,13 +231,17 @@ export function bonusBreakdown(id: number, year = YEAR) {
   const get = (ind: string) => (db.prepare(`SELECT raw_value v FROM fact_indicator_score WHERE person_id=? AND period_id=? AND indicator_id=? AND grain='PERSON'`).get(id, year, ind) as any)?.v ?? 0;
   const clamp = (x: number, hi: number) => Math.max(0, Math.min(hi, x));
   const fwci = get("R05"), intl = get("R07"), oa = get("R08");
-  const e06 = get("E06"), i04start = (db.prepare(`SELECT raw_value v FROM fact_indicator_score WHERE person_id=? AND period_id=? AND indicator_id='I04' AND grain='PERSON'`).get(id, year) as any)?.v ?? 0;
+  const e06 = get("E06");
+  // I04 창업 신설분 가점: 생성기 computeBonus와 동일하게 창업지도 건수(startup_guide) × 0.5, 상한 1.0.
+  // I04 활동 attributes에서 창업 건수를 조회(하드코딩 0 제거) → 세부 합 = bonus_score.
+  const i04a = db.prepare(`SELECT attributes attrs FROM fact_activity WHERE person_id=? AND period_id=? AND indicator_id='I04' LIMIT 1`).get(id, year) as any;
+  const startup = i04a ? (JSON.parse(i04a.attrs || "{}").startup_guide ?? 0) : 0;
   return [
-    { key: "R05", label: "FWCI", metric: fwci.toFixed(2) + "배", pts: clamp((fwci - 1) * 1.5, 1.5) },
-    { key: "R07", label: "국제공동", metric: (intl * 100).toFixed(0) + "%", pts: clamp(intl * 3, 1.0) },
-    { key: "R08", label: "오픈액세스", metric: (oa * 100).toFixed(0) + "%", pts: clamp(oa * 2, 1.0) },
-    { key: "E06", label: "AI·디지털", metric: e06 + "건", pts: clamp(e06 * 0.25, 0.5) },
-    { key: "I04", label: "창업지도", metric: "실적", pts: 0 },
+    { key: "R05", label: "FWCI", metric: fwci.toFixed(2) + "배", pts: clamp((fwci - 1) * 1.5, 1.5), cap: 1.5 },
+    { key: "R07", label: "국제공동", metric: (intl * 100).toFixed(0) + "%", pts: clamp(intl * 3, 1.0), cap: 1.0 },
+    { key: "R08", label: "오픈액세스", metric: (oa * 100).toFixed(0) + "%", pts: clamp(oa * 2, 1.0), cap: 1.0 },
+    { key: "E06", label: "AI·디지털", metric: e06 + "건", pts: clamp(e06 * 0.25, 0.5), cap: 0.5 },
+    { key: "I04", label: "창업지도", metric: startup + "건", pts: clamp(startup * 0.5, 1.0), cap: 1.0 },
   ].map((b) => ({ ...b, pts: +b.pts.toFixed(2) }));
 }
 
@@ -248,6 +262,7 @@ export function drilldown(id: number, indicator: string, year = YEAR): { indicat
   const bands = coefMap("paper_band");
   const ipUnit = coefMap("ip_unit");
   const grantKind = coefMap("grant_kind");
+  const artShare = coefMap("art_share");
   const acts = db.prepare(`SELECT activity_id id, title, attributes attrs, activity_type type FROM fact_activity WHERE person_id=? AND period_id=? AND indicator_id=? ORDER BY activity_id`).all(id, year, indicator) as any[];
   const items: DrillItem[] = [];
   for (const a of acts) {
@@ -280,8 +295,12 @@ export function drilldown(id: number, indicator: string, year = YEAR): { indicat
       items.push({ title: a.title, score: +score.toFixed(1), sub: `${at.number ?? ""} · 지분 ${(ip.share * 100).toFixed(0)}%`,
         basis: `단가 ${unit} × 발명자지분 ${ip.share} = ${score.toFixed(1)}점`, meta: { 출원등록번호: at.number ?? "-", 지분율: (ip.share * 100).toFixed(0) + "%" } });
     } else if (indicator === "R11") {
-      items.push({ title: a.title, score: +at.base * ([1, 1, 0.8, 0.7, 0.6][Math.min(at.participants, 4) - 1] ?? 1) , sub: `${at.label} · ${at.venue}`,
-        basis: `${at.label} 배점 ${at.base} × 인원환산(${at.participants}인) = ${(at.base * ([1, 1, 0.8, 0.7, 0.6][Math.min(at.participants, 4) - 1] ?? 1)).toFixed(0)}점`,
+      // 인원환산율은 param(art_share)에서 조회 — 참여인원 1~6인 → 100/80/70/60/50/30% (하드코딩 금지, 생성기 artScore와 동일)
+      const sharePct = artShare.get(String(Math.min(Math.max(at.participants, 1), 6))) ?? 100;
+      const share = sharePct / 100;
+      const score = at.base * share;
+      items.push({ title: a.title, score: +score.toFixed(1), sub: `${at.label} · ${at.venue}`,
+        basis: `${at.label} 배점 ${at.base} × 인원환산 ${sharePct}%(${at.participants}인) = ${score.toFixed(1)}점`,
         meta: { 장소: at.venue, 규모: at.scale === "INTL" ? "국제" : "국내", 참여인원: at.participants + "인" } });
     } else if (indicator === "E01") {
       items.push({ title: a.title, score: +(at.rating ?? 0), sub: `수강 ${at.enroll ?? "-"}명 · ${at.credits ?? 3}학점${at.foreign ? " · 원어강의" : ""}`,
@@ -364,7 +383,9 @@ export function workflowQueue(session: Session, year = YEAR) {
   }
   return db.prepare(
     `SELECT e.eval_id id, p.name, p.person_id pid, o.name dept, e.status, e.current_step step,
-            ROUND(e.composite_score+e.bonus_score,1) score, e.grade_rel grade, p.appointed_version version, e.quality_gate_pass gate
+            ROUND(e.composite_score+e.bonus_score,1) score, e.grade_rel grade, p.appointed_version version, e.quality_gate_pass gate,
+            (SELECT COUNT(*) FROM fact_appeal ap WHERE ap.eval_id=e.eval_id) appeals,
+            (SELECT ap.status FROM fact_appeal ap WHERE ap.eval_id=e.eval_id ORDER BY ap.appeal_id DESC LIMIT 1) appealStatus
      FROM fact_evaluation e JOIN dim_person p ON p.person_id=e.person_id JOIN dim_org o ON o.org_id=p.org_id
      WHERE ${where} ORDER BY e.status, score DESC LIMIT 60`
   ).all(...args) as any[];
@@ -387,6 +408,12 @@ export function workflowSteps(evalId: number) {
   return db.prepare(`SELECT step_no step, from_status f, to_status t, actor_role actor, action, comment, acted_at at FROM eval_step_log WHERE eval_id=? ORDER BY log_id`).all(evalId) as any[];
 }
 
+/** 이의신청·반려 내역 (fact_appeal). 워크플로 상세에 표시. */
+export function evalAppeals(evalId: number) {
+  const db = getDb();
+  return db.prepare(`SELECT reason, filed_at filedAt, status, resolution, resolved_at resolvedAt FROM fact_appeal WHERE eval_id=? ORDER BY appeal_id`).all(evalId) as any[];
+}
+
 // ─────── 정적 export(generateStaticParams)용 전체 id 목록 ───────
 export function allFacultyIds(): number[] {
   const db = getDb();
@@ -398,9 +425,12 @@ export function allStaffIds(): number[] {
 }
 /** 워크플로 목록에서 링크되는 평가 건(교원+직원 대기열 상한 내) id */
 export function workflowStaticIds(): number[] {
+  const db = getDb();
   const fac = workflowQueue(DEFAULT_SESSION).map((r: any) => r.id as number);
   const stf = staffWorkflowQueue(DEFAULT_SESSION).map((r: any) => r.id as number);
-  return Array.from(new Set([...fac, ...stf]));
+  // 이의신청이 있는 평가 건은 반드시 상세 페이지를 생성(정적 export에서 누락 방지) — B3 이의·반려 표시.
+  const appeals = (db.prepare(`SELECT DISTINCT eval_id id FROM fact_appeal`).all() as any[]).map((r) => r.id as number);
+  return Array.from(new Set([...fac, ...stf, ...appeals]));
 }
 
 // ═══════════════════════════ 직원(STAFF) ═══════════════════════════
@@ -605,7 +635,9 @@ export function staffWorkflowQueue(s: Session, half = STAFF_LATEST) {
   if (s.role === "TEAM_LEAD" || s.role === "DEPT_HEAD") { const v = getViewer(s); if (v) { where += " AND p.org_id=?"; args.push(v.orgId); } }
   else if (s.role === "STAFF") { where += " AND e.person_id=?"; args.push(s.viewer); }
   return db.prepare(
-    `SELECT e.eval_id id, p.name, p.person_id pid, o.name dept, e.status, e.current_step step, ROUND(e.composite_score,1) score, e.grade_rel grade, sp.mgr_role mgrRole
+    `SELECT e.eval_id id, p.name, p.person_id pid, o.name dept, e.status, e.current_step step, ROUND(e.composite_score,1) score, e.grade_rel grade, sp.mgr_role mgrRole,
+            (SELECT COUNT(*) FROM fact_appeal ap WHERE ap.eval_id=e.eval_id) appeals,
+            (SELECT ap.status FROM fact_appeal ap WHERE ap.eval_id=e.eval_id ORDER BY ap.appeal_id DESC LIMIT 1) appealStatus
      FROM fact_evaluation e JOIN dim_person p ON p.person_id=e.person_id JOIN dim_org o ON o.org_id=p.org_id JOIN staff_profile sp ON sp.person_id=p.person_id
      WHERE ${where} ORDER BY e.status, score DESC LIMIT 60`
   ).all(...args) as any[];

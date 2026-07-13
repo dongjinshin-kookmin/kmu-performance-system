@@ -95,11 +95,11 @@ export default async function Dashboard() {
       {/* 직원 성과 요약 (교수/직원 통합 기관 뷰) */}
       <Reveal className="panel" style={{ padding: "1.3rem 1.4rem", marginBottom: 18, borderColor: "var(--area-I)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-          <div><div className="eyebrow" style={{ color: "var(--area-I)" }}>직원 성과 · 2025-2학기 반기</div>
+          <div><div className="eyebrow" style={{ color: "var(--area-I)" }}>직원 성과 · 2025-2 반기</div>
             <h2 style={{ fontSize: "1.15rem", margin: "4px 0 0" }}>행정직 성과 요약</h2></div>
           <Link href="/units" className="chip" style={{ cursor: "pointer", borderColor: "var(--area-I)", color: "var(--area-I)" }}>부서 KPI 대시보드 →</Link>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr) 1.4fr", gap: 18, marginTop: 14, alignItems: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 18, marginTop: 14, alignItems: "center" }}>
           <Metric label="직원" value={staff.n} suffix="명" />
           <Metric label="평균 종합점수" value={staff.avg} decimals={1} />
           <Metric label="MBO 평균 달성률" value={staff.mbo} suffix="%" />
@@ -120,7 +120,7 @@ export default async function Dashboard() {
                 <span className="mono" style={{ width: 20, color: "var(--muted)", fontSize: "0.8rem" }}>{i + 1}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", marginBottom: 3 }}>
-                    <span>{c.college}</span><span className="mono" style={{ fontWeight: 600 }}>{c.score} <span style={{ color: "var(--muted)" }}>·{c.n}명</span></span>
+                    <span>{c.college}</span><span className="mono" style={{ fontWeight: 600 }}>{c.score.toFixed(1)} <span style={{ color: "var(--muted)" }}>·{c.n}명</span></span>
                   </div>
                   <Meter value={c.score - 70} max={max - 70} color={i < 3 ? "var(--area-R)" : "var(--border-strong)"} height={6} />
                 </div>

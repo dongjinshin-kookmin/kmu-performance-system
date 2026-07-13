@@ -66,6 +66,12 @@ export function ArcGauge({ value, max = 120, size = 230, color, grade, displayMa
   useEffect(() => { mv.set(circ * (1 - frac)); }, [frac, circ, mv]);
   useEffect(() => spring.on("change", (v) => setDash(v)), [spring]);
   const c = size / 2;
+  // 기준(max) 초과분: 주 링은 100%에서 포화되므로, 초과분을 안쪽 보조 링(금색)으로 별도 표시.
+  // → 105점과 130점이 동일하게 보이던 게이지 포화 문제 해소.
+  const OSTROKE = 9;
+  const r2 = r - STROKE / 2 - OSTROKE / 2 - 2;
+  const circ2 = 2 * Math.PI * r2;
+  const overFrac = value > max ? Math.min(1, (value - max) / max) : 0;
   const pct = displayMax ? Math.round((value / displayMax) * 100) : null;
   const over = pct != null && pct > 100;
   const numStr = value.toFixed(1);
@@ -76,6 +82,13 @@ export function ArcGauge({ value, max = 120, size = 230, color, grade, displayMa
         <circle cx={c} cy={c} r={r} fill="none" stroke="var(--surface-2)" strokeWidth={STROKE} />
         <motion.circle cx={c} cy={c} r={r} fill="none" stroke={color} strokeWidth={STROKE} strokeLinecap="round"
           strokeDasharray={circ} strokeDashoffset={dash} style={{ filter: `drop-shadow(0 0 9px ${color}77)` }} />
+        {overFrac > 0 && (
+          <>
+            <circle cx={c} cy={c} r={r2} fill="none" stroke="var(--surface-2)" strokeWidth={OSTROKE} />
+            <circle cx={c} cy={c} r={r2} fill="none" stroke="var(--ok)" strokeWidth={OSTROKE} strokeLinecap="round"
+              strokeDasharray={circ2} strokeDashoffset={circ2 * (1 - overFrac)} style={{ filter: "drop-shadow(0 0 6px var(--ok))" }} />
+          </>
+        )}
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1 }}>
         <span className="mono" style={{ fontSize: numFs, fontWeight: 700, lineHeight: 1, letterSpacing: "-0.03em", color: "var(--text)" }}>

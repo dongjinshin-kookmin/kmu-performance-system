@@ -37,7 +37,7 @@ export function generateStaff(db: BetterSqlite3.Database, rng: Rng, staff: Staff
     const id = y * 10 + h;
     halves.push(id);
     insPeriod.run(id, y, h, h, `${y}-${h}학기`);
-    insCycle.run(id, "STAFF", y, h, PV, "TARGET", "REL_DIST", `${y}-0${h === 1 ? 3 : 9}-01`, `${y}-0${h === 1 ? 8 : 12}-31`, id === 20252 ? "OPEN" : "CLOSED");
+    insCycle.run(id, "STAFF", y, h, PV, "TARGET", "REL_DIST", `${y}-${h === 1 ? "03" : "09"}-01`, `${y}-${h === 1 ? "08" : "12"}-31`, id === 20252 ? "OPEN" : "CLOSED");
   }
   const LATEST = 20252;
 

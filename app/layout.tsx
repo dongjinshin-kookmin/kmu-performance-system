@@ -30,8 +30,12 @@ const KIND_COLOR: Record<RoleCode, string> = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const s = await getSession();
-  const { faculty, chairs } = roleOptions();
-  const { staff, leads, heads } = staffRoleOptions();
+  // A3: 마스킹(총장·기획처) 세션에서는 역할전환기/커맨드팔레트 직렬화 데이터에 실명·person_id·소속이
+  // HTML 소스로 누출되지 않도록 인물 옵션 목록을 비운다. 총장은 개인 선택 드롭다운 자체가 없고,
+  // 역할 버튼 전환은 이 배열과 무관하게 동작하므로 역할 전환 데모 기능은 그대로 유지된다.
+  const masked = !ROLES[s.role].seeIndividualRaw;
+  const { faculty, chairs } = masked ? { faculty: [], chairs: [] } : roleOptions();
+  const { staff, leads, heads } = masked ? { staff: [], leads: [], heads: [] } : staffRoleOptions();
   const viewer = getViewer(s);
   const def = ROLES[s.role];
   const facultyKind = s.role === "FACULTY";

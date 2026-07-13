@@ -64,7 +64,7 @@ export default function FacultyIndicators() {
                   {(["R", "E", "I", "S"] as AreaKey[]).map((a) => {
                     const w = t[`w_${a}`];
                     return <div key={a} title={`${AREA[a].full} ${w}%`} style={{ width: `${w}%`, background: `var(--area-${a})`, display: "flex", alignItems: "center", justifyContent: "center", borderRight: "1px solid var(--surface)" }}>
-                      {w >= 15 && <span className="mono" style={{ fontSize: "0.64rem", color: "#fff", fontWeight: 600 }}>{a}{w}</span>}
+                      {w >= 10 && <span className="mono" style={{ fontSize: "0.62rem", color: "#fff", fontWeight: 600 }}>{a}{w}</span>}
                     </div>;
                   })}
                 </div>
@@ -76,9 +76,9 @@ export default function FacultyIndicators() {
         {/* 등급 정책 */}
         <Reveal className="panel" style={{ padding: "1.3rem 1.4rem" }} delay={0.08}>
           <div className="eyebrow">등급 정책 (교원)</div>
-          <h2 style={{ fontSize: "1.05rem", margin: "4px 0 14px" }}>절대컷 + 상대배분 상한 병기</h2>
+          <h2 style={{ fontSize: "1.05rem", margin: "4px 0 14px" }}>절대컷 + 상대분포(참고) · 강제 상한 병기</h2>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
-            <thead><tr style={{ color: "var(--muted)", fontSize: "0.7rem", textAlign: "left" }}><th style={{ padding: "4px 0" }}>등급</th><th>절대컷</th><th>상대상한(누적)</th></tr></thead>
+            <thead><tr style={{ color: "var(--muted)", fontSize: "0.7rem", textAlign: "left" }}><th style={{ padding: "4px 0" }}>등급</th><th>절대컷</th><th>상대분포(%)</th></tr></thead>
             <tbody>
               {["S", "A", "B", "C", "D"].map((g) => {
                 const ab = absCut.find((c: any) => c.grade === g);
@@ -87,13 +87,22 @@ export default function FacultyIndicators() {
                   <tr key={g} style={{ borderTop: "1px solid var(--border)" }}>
                     <td style={{ padding: "7px 0" }}><span className="mono" style={{ display: "inline-block", width: 22, height: 22, borderRadius: 5, background: `var(--grade-${g})`, color: "#fff", textAlign: "center", lineHeight: "22px", fontWeight: 700 }}>{g}</span></td>
                     <td className="mono">{ab?.cut ? `≥ ${ab.cut}` : "< 60"}</td>
-                    <td className="mono">{rl?.dist ? `${(rl.dist * 100).toFixed(0)}%` : "—"}</td>
+                    <td>
+                      {rl?.dist ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <span className="mono">{(rl.dist * 100).toFixed(0)}%</span>
+                          {g === "S" || g === "D"
+                            ? <span className="chip" style={{ fontSize: "0.55rem", padding: "0 5px", color: "var(--warn)", borderColor: "var(--warn)" }}>상한</span>
+                            : <span className="chip" style={{ fontSize: "0.55rem", padding: "0 5px", color: "var(--muted)" }}>참고</span>}
+                        </span>
+                      ) : "—"}
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          <p style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: 10 }}>S 상위 10% · S+A 35% · D 하위 5% (계열그룹 코호트)</p>
+          <p style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: 10 }}>강제 상한: S ≤ 10% · S+A ≤ 35%(누적) · D ≤ 5% (계열그룹 코호트) — A·B·C는 강제 상한이 없는 목표 분포(참고)</p>
         </Reveal>
       </section>
 

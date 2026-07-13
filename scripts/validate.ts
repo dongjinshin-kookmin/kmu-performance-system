@@ -249,6 +249,39 @@ function main() {
   push("(q) 연결 KPI·MBO 정합", kpiBad === 0 && kpiLinked > 0,
     `연결 ${kpiLinked}건(${((kpiLinked / wlTot) * 100).toFixed(0)}%) · 부서유형 풀 불일치 ${kpiBad}건`);
 
+  // ══════════════════ 성과카드 산출근거 정합 (페이지 리뷰 A1·A2) ══════════════════
+  // (r) A1: 예체능 R11 드릴다운 인원환산(param art_share)합 = converted_score, G_ART 전수
+  const artShareP = new Map<string, number>();
+  for (const x of db.prepare(`SELECT coef_key k, coef_value v FROM param_coefficient WHERE coef_group='art_share' AND param_version_id=2`).all() as any[]) artShareP.set(x.k, x.v);
+  const r11People = db.prepare(`SELECT DISTINCT person_id id FROM fact_indicator_score WHERE indicator_id='R11' AND period_id=? AND grain='PERSON'`).all(EVAL_YEAR) as any[];
+  let r11Bad = 0;
+  for (const f of r11People) {
+    const conv = (db.prepare(`SELECT converted_score c FROM fact_indicator_score WHERE person_id=? AND period_id=? AND indicator_id='R11' AND grain='PERSON'`).get(f.id, EVAL_YEAR) as any).c;
+    let sum = 0;
+    for (const x of db.prepare(`SELECT attributes a FROM fact_activity WHERE person_id=? AND period_id=? AND indicator_id='R11'`).all(f.id, EVAL_YEAR) as any[]) {
+      const at = JSON.parse(x.a); const share = (artShareP.get(String(Math.min(Math.max(at.participants, 1), 6))) ?? 100) / 100; sum += at.base * share;
+    }
+    if (Math.abs(sum - conv) > 0.5) r11Bad++;
+  }
+  push("(r) A1 R11 드릴다운 합=converted_score(예체능 전수)", r11Bad === 0, `대상 ${r11People.length}명, 불일치 ${r11Bad}건`);
+
+  // (s) A2: 가점 5종 세부(FWCI·국제·OA·AI·창업) 합 = bonus_score, 교원 전수
+  const bcap: Record<string, number> = {};
+  for (const x of db.prepare(`SELECT coef_key k, coef_value v FROM param_coefficient WHERE coef_group='bonus_cap' AND param_version_id=2`).all() as any[]) bcap[x.k] = x.v;
+  const clampv = (x: number, hi: number) => Math.max(0, Math.min(hi, x));
+  const rawvB = (id: number, ind: string) => (db.prepare(`SELECT raw_value v FROM fact_indicator_score WHERE person_id=? AND period_id=? AND indicator_id=? AND grain='PERSON'`).get(id, EVAL_YEAR, ind) as any)?.v ?? 0;
+  const bonusPeople = db.prepare(`SELECT person_id id, bonus_score b FROM fact_evaluation WHERE cycle_id=?`).all(EVAL_YEAR) as any[];
+  let bonusBad = 0;
+  for (const f of bonusPeople) {
+    const fwci = rawvB(f.id, "R05"), intl = rawvB(f.id, "R07"), oa = rawvB(f.id, "R08"), e06 = rawvB(f.id, "E06");
+    const i04a = db.prepare(`SELECT attributes a FROM fact_activity WHERE person_id=? AND period_id=? AND indicator_id='I04' LIMIT 1`).get(f.id, EVAL_YEAR) as any;
+    const startup = i04a ? (JSON.parse(i04a.a).startup_guide ?? 0) : 0;
+    const parts = clampv((fwci - 1) * 1.5, bcap.R05) + clampv(intl * 3, bcap.R07) + clampv(oa * 2, bcap.R08) + clampv(e06 * 0.25, bcap.E06) + clampv(startup * 0.5, bcap.I04);
+    const total = Math.min(parts, bcap.total);
+    if (Math.abs(total - f.b) > 0.05) bonusBad++;
+  }
+  push("(s) A2 가점 세부 합=bonus_score(교원 전수)", bonusBad === 0, `대상 ${bonusPeople.length}명, 불일치 ${bonusBad}건`);
+
   db.close();
 
   const lines: string[] = [];

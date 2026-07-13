@@ -23,7 +23,7 @@ export default async function StaffAnalysis({ searchParams }: { searchParams: Pr
 
   const insights = [
     { a: "mbo", b: "svc", note: "개인 MBO 달성률과 부서 서비스평가의 연관" },
-    { a: "kpi", b: "comp", note: "부서 KPI 달성률과 개인 종합점수의 정렬(캐스케이딩 효과)" },
+    { a: "kpi", b: "comp", note: "부서 KPI 달성률과 개인 종합점수 간 양의 상관 관측(인과 아님)" },
     { a: "WORK", b: "comp", note: "근무실적 영역이 종합점수에 미치는 연관 강도" },
   ].map((it) => ({ ...it, r: pearson(rows.map((x) => x.vals[idx(it.a, 0)]), rows.map((x) => x.vals[idx(it.b, 0)])), la: metrics[idx(it.a, 0)].label, lb: metrics[idx(it.b, 0)].label }));
 
@@ -33,7 +33,7 @@ export default async function StaffAnalysis({ searchParams }: { searchParams: Pr
         <div className="eyebrow" style={{ color: "var(--area-I)" }}>직원 성과 · 상관관계 분석</div>
         <h1 style={{ fontSize: "2.1rem", fontWeight: 800, letterSpacing: "-0.03em", margin: "6px 0 4px" }}>지표 상관관계 분석</h1>
         <p style={{ color: "var(--muted)", fontSize: "0.84rem", maxWidth: "70ch" }}>
-          일반·기술직 직원 {rows.length}명의 2025-2학기 지표 간 상관을 분석합니다. 셀 클릭 시 산점도로 전환됩니다.
+          일반·기술직 직원 {rows.length}명의 2025-2 반기 지표 간 상관을 분석합니다. 셀 클릭 시 산점도로 전환됩니다.
         </p>
       </Reveal>
 

@@ -130,7 +130,7 @@ export function GroupBars({ data }: { data: { grp: string; label: string; score:
         <XAxis type="number" domain={[75, 95]} tick={{ fill: c.tick, fontSize: 12 }} axisLine={false} tickLine={false} />
         <YAxis type="category" dataKey="label" width={120} tick={{ fill: c.text, fontSize: 13 }} axisLine={false} tickLine={false} />
         <Tooltip cursor={{ fill: c.grid, opacity: 0.3 }} content={({ active, payload }) => active && payload?.length ? <Box><b>{payload[0].payload.label}</b><br />평균 {payload[0].value} · {payload[0].payload.n}명</Box> : null} />
-        <Bar dataKey="score" radius={[0, 4, 4, 0]} animationDuration={1000} label={{ position: "right", fill: c.tick, fontSize: 11, formatter: (v: number) => v.toFixed(1) }}>
+        <Bar dataKey="score" radius={[0, 4, 4, 0]} isAnimationActive={false} label={{ position: "right", fill: c.tick, fontSize: 11, formatter: (v: number) => v.toFixed(1) }}>
           {data.map((d, i) => <Cell key={i} fill={c.area(["R", "E", "I", "S"][i % 4] as AreaKey)} />)}
         </Bar>
       </BarChart>
@@ -178,7 +178,8 @@ export function AreaRadar({ areas }: { areas: { area: string; std: number }[] })
       <RadarChart data={data} outerRadius="72%">
         <PolarGrid stroke={c.grid} />
         <PolarAngleAxis dataKey="area" tick={{ fill: c.text, fontSize: 15, fontWeight: 600 }} />
-        <PolarRadiusAxis domain={[0, 120]} tick={{ fill: c.tick, fontSize: 11 }} axisLine={false} />
+        {/* 반경축 눈금 라벨(0·30·60…)이 격자·영역명과 겹쳐 판독성이 떨어지므로 숨김 — 값은 아래 영역 바에서 제공 */}
+        <PolarRadiusAxis domain={[0, 120]} tick={false} axisLine={false} />
         <Radar dataKey="std" stroke={c.area("R")} fill={c.area("R")} fillOpacity={0.3} strokeWidth={2} animationDuration={1000} />
         <Tooltip content={({ active, payload }) => active && payload?.length ? <Box>{payload[0].payload.area} · 표준화 {Number(payload[0].value).toFixed(1)}</Box> : null} />
       </RadarChart>

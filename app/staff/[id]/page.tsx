@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { getSession } from "@/lib/rbac";
+import { getSession, MASK_MIN } from "@/lib/rbac";
 import {
   canViewStaff, staffHeader, staffHalves, staffEval, staffAreas, staffTrend,
   staffPercentile, staffMbo, staffActivities, pickerStaff, STAFF_LATEST, staffRanks, staffFeedback, staffWorklog,
-  allStaffIds,
+  allStaffIds, staffDeptSize,
 } from "@/lib/queries";
 import { Reveal, ArcGauge, GradeBadge, Meter, CountUp, Delta } from "@/components/ui";
 import { TrendChart } from "@/components/charts";
@@ -31,12 +31,12 @@ export default async function StaffCard({ params, searchParams }: { params: Prom
   const half = IS_EXPORT ? STAFF_LATEST : (Number((await searchParams).half) || STAFF_LATEST);
   const s = await getSession();
   const h = staffHeader(id);
-  if (!h) return <Denied reason="존재하지 않는 직원입니다." />;
+  if (!h) return <Denied title="대상을 찾을 수 없습니다" reason="존재하지 않는 직원입니다." />;
   const perm = canViewStaff(s, id);
   if (!perm.ok) return <Denied reason={perm.reason} />;
 
   const ev = staffEval(id, half);
-  if (!ev) return <Denied reason="해당 반기 평가가 없습니다." />;
+  if (!ev) return <Denied title="대상을 찾을 수 없습니다" reason="해당 반기 평가가 없습니다." />;
   const areas = staffAreas(id, half);
   const trend = staffTrend(id).map((t: any) => ({ year: `${Math.floor(t.half / 10)}-${t.half % 10}`, score: t.score, grade: t.grade }));
   const pctl = staffPercentile(id, half);
@@ -49,15 +49,22 @@ export default async function StaffCard({ params, searchParams }: { params: Prom
   }));
 
   if (perm.masked) {
+    // B2 소셀 마스킹 — 부서 인원 n<MASK_MIN(직원 부서는 대개 4명 안팎)이면 부서명+정확 백분위로
+    // 개인 재식별이 쉬우므로, 소속을 부서유형으로 대체하고 소규모 '부서 백분위'는 비표시(전체만 근사).
+    const deptN = staffDeptSize(h.orgId, half);
+    const small = deptN < MASK_MIN;
+    const round5 = (v: number) => Math.round(v / 5) * 5;
+    const unitLabel = small ? `${DEPT_TYPE_LABEL[h.deptType] ?? "부서유형"} 소속` : `${h.dept} 소속`;
     return (
       <main className="wrap" style={{ padding: "2rem 0 4rem", maxWidth: 720 }}>
         <Reveal className="panel" style={{ padding: "2rem" }}>
           <div className="eyebrow">총장·기획처 뷰 · 개인 원점수 비노출</div>
-          <h1 style={{ fontSize: "1.5rem", margin: "8px 0 4px" }}>{h.dept} 소속 직원 (익명)</h1>
+          <h1 style={{ fontSize: "1.5rem", margin: "8px 0 4px" }}>{unitLabel} 직원 (익명)</h1>
+          <p style={{ color: "var(--muted)", fontSize: "0.82rem" }}>개인 식별·원점수는 마스킹되며 백분위 집계만 제공됩니다.{small && <> 소규모 부서(n&lt;{MASK_MIN})는 재식별 방지를 위해 소속을 부서유형으로 대체하고 부서 백분위는 비표시, 전체 백분위만 근사값(≈)으로 제공합니다.</>}</p>
           <div style={{ display: "flex", gap: 30, marginTop: 24, alignItems: "center" }}>
             <div style={{ textAlign: "center" }}><GradeBadge grade={ev.rel} size="lg" /><div style={{ fontSize: "0.72rem", color: "var(--muted)", marginTop: 6 }}>등급</div></div>
-            <div><div className="eyebrow">부서 백분위</div><div className="mono" style={{ fontSize: "2rem", fontWeight: 700 }}><CountUp value={pctl.dept} suffix="%ile" /></div></div>
-            <div><div className="eyebrow">전체 백분위</div><div className="mono" style={{ fontSize: "2rem", fontWeight: 700 }}><CountUp value={pctl.all} suffix="%ile" /></div></div>
+            {!small && <div><div className="eyebrow">부서 백분위</div><div className="mono" style={{ fontSize: "2rem", fontWeight: 700 }}><CountUp value={pctl.dept} suffix="%ile" /></div></div>}
+            <div><div className="eyebrow">전체 백분위</div><div className="mono" style={{ fontSize: "2rem", fontWeight: 700 }}>{small && "≈"}<CountUp value={small ? round5(pctl.all) : pctl.all} suffix="%ile" /></div></div>
           </div>
         </Reveal>
       </main>
@@ -251,12 +258,12 @@ function TrendStat({ label, value, sub }: { label: string; value: React.ReactNod
   );
 }
 
-function Denied({ reason }: { reason?: string }) {
+function Denied({ reason, title }: { reason?: string; title?: string }) {
   return (
     <main className="wrap" style={{ padding: "4rem 0" }}>
       <div className="panel" style={{ padding: "3rem", textAlign: "center", maxWidth: 560, margin: "0 auto" }}>
-        <div style={{ fontSize: "2rem" }}>🔒</div>
-        <h1 style={{ fontSize: "1.3rem", margin: "12px 0 6px" }}>접근 권한이 없습니다</h1>
+        <div style={{ fontSize: "2rem" }}>{title ? "🔎" : "🔒"}</div>
+        <h1 style={{ fontSize: "1.3rem", margin: "12px 0 6px" }}>{title ?? "접근 권한이 없습니다"}</h1>
         <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>{reason ?? "현재 역할의 접근 범위를 벗어났습니다."}</p>
         <Link href="/units" className="chip" style={{ marginTop: 16, display: "inline-flex", cursor: "pointer" }}>부서 KPI로 이동</Link>
       </div>

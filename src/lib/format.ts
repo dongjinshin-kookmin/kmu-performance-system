@@ -20,8 +20,13 @@ export const STATUS_LABEL: Record<string, string> = {
 
 /** IF 밴드 → 사람이 읽는 라벨 */
 export const BAND_LABEL: Record<string, string> = {
-  SNC: "S/N/Cell", SSCI_AHCI: "SSCI·A&HCI", SCIE_P5: "SCI 상위5%", SCIE_P10: "SCI 상위10%",
-  SCIE_P25: "SCI 상위25%", SCIE_P50: "SCI 상위50%", SCIE_GEN: "SCI 일반", SCOPUS: "SCOPUS",
-  INTL_GEN: "국제일반", KCI: "KCI 등재", KCI_CAND: "KCI 후보", DOM_GEN: "국내일반",
+  SNC: "S/N/Cell", SSCI_AHCI: "SSCI·A&HCI", SCIE_P5: "SCI 상위 5%", SCIE_P10: "SCI 상위 10%",
+  SCIE_P25: "SCI 상위 25%", SCIE_P50: "SCI 상위 50%", SCIE_GEN: "SCI 일반", SCOPUS: "SCOPUS",
+  INTL_GEN: "국제 일반", KCI: "KCI 등재", KCI_CAND: "KCI 후보", DOM_GEN: "국내 일반",
 };
+
+/** 사이클 id → 사람이 읽는 라벨. 교원=연도(2025), 직원=반기(2025-2 반기). */
+export function cycleLabel(cycleId: number): string {
+  return cycleId > 20000 ? `${Math.floor(cycleId / 10)}-${cycleId % 10} 반기` : `${cycleId}`;
+}
 export const ROLE_KO: Record<string, string> = { SOLE: "단독", FIRST: "제1저자", CORRESP: "교신저자", CO: "공동저자" };

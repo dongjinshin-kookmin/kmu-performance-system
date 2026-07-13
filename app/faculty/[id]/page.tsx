@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { getSession } from "@/lib/rbac";
+import { getSession, MASK_MIN } from "@/lib/rbac";
 import {
   canViewPerson, facultyHeader, facultyEval, facultyAreas, facultyTrend,
   compositePercentile, bonusBreakdown, facultyIndicatorSummary, drilldown, pickerFaculty,
-  facultyRanks, facultyScoreMax, allFacultyIds,
+  facultyRanks, facultyScoreMax, allFacultyIds, facultyDeptSize,
 } from "@/lib/queries";
 import { Reveal, ArcGauge, GradeBadge, Meter, CountUp, Delta } from "@/components/ui";
 import { AreaRadar, TrendChart } from "@/components/charts";
 import { RankWidget } from "@/components/RankWidget";
 import { PerformanceBreakdown, DrillItem } from "@/components/Drilldown";
 import { PersonPicker } from "@/components/PersonPicker";
-import { AREA, AreaKey } from "@/lib/colors";
+import { AREA, AreaKey, GROUP_LABEL } from "@/lib/colors";
 import { TRACK_LABEL, VERSION_LABEL } from "@/lib/format";
 
 export function generateStaticParams() {
@@ -22,7 +22,7 @@ export default async function FacultyCard({ params }: { params: Promise<{ id: st
   const s = await getSession();
   const perm = canViewPerson(s, id);
   const h = facultyHeader(id);
-  if (!h) return <Denied reason="존재하지 않는 교원입니다." />;
+  if (!h) return <Denied title="대상을 찾을 수 없습니다" reason="존재하지 않는 교원입니다." />;
   if (!perm.ok) return <Denied reason={perm.reason} />;
 
   const ev = facultyEval(id);
@@ -39,18 +39,25 @@ export default async function FacultyCard({ params }: { params: Promise<{ id: st
   };
   const rankItems = facultyRanks(id).map((r) => ({ ...r, ...RANK_META[r.key] }));
 
-  // 마스킹(총장): 집계·백분위만
+  // 마스킹(총장): 집계·백분위만. B2 소셀 마스킹 — 소속 학과 인원 n<MASK_MIN이면 재식별 위험이
+  // 커지므로 소속을 계열그룹으로 대체하고 백분위를 근사값(5단위)으로 표시.
   if (perm.masked) {
+    const deptN = facultyDeptSize(h.orgId);
+    const small = deptN < MASK_MIN;
+    const round5 = (v: number) => Math.round(v / 5) * 5;
+    const unitLabel = small ? `${GROUP_LABEL[h.grp] ?? "계열그룹"} 소속` : `${h.dept} 소속`;
+    const gp = small ? round5(pctl.group) : pctl.group;
+    const up = small ? round5(pctl.univ) : pctl.univ;
     return (
       <main className="wrap" style={{ padding: "2rem 0 4rem", maxWidth: 720 }}>
         <Reveal className="panel" style={{ padding: "2rem" }}>
           <div className="eyebrow">총장·기획처 뷰 · 개인 원점수 비노출</div>
-          <h1 style={{ fontSize: "1.5rem", margin: "8px 0 4px" }}>{h.dept} 소속 교원 (익명)</h1>
-          <p style={{ color: "var(--muted)", fontSize: "0.82rem" }}>개인 식별·원점수는 마스킹되며 백분위 집계만 제공됩니다.</p>
+          <h1 style={{ fontSize: "1.5rem", margin: "8px 0 4px" }}>{unitLabel} 교원 (익명)</h1>
+          <p style={{ color: "var(--muted)", fontSize: "0.82rem" }}>개인 식별·원점수는 마스킹되며 백분위 집계만 제공됩니다.{small && <> 소규모 조직(n&lt;{MASK_MIN})은 재식별 방지를 위해 소속을 계열그룹으로, 백분위를 근사값(≈)으로 표시합니다.</>}</p>
           <div style={{ display: "flex", gap: 30, marginTop: 24, alignItems: "center" }}>
             <div style={{ textAlign: "center" }}><GradeBadge grade={ev.rel} size="lg" /><div style={{ fontSize: "0.72rem", color: "var(--muted)", marginTop: 6 }}>등급</div></div>
-            <div><div className="eyebrow">계열그룹 백분위</div><div className="mono" style={{ fontSize: "2rem", fontWeight: 700 }}><CountUp value={pctl.group} suffix="%ile" /></div></div>
-            <div><div className="eyebrow">전체 백분위</div><div className="mono" style={{ fontSize: "2rem", fontWeight: 700 }}><CountUp value={pctl.univ} suffix="%ile" /></div></div>
+            <div><div className="eyebrow">계열그룹 백분위</div><div className="mono" style={{ fontSize: "2rem", fontWeight: 700 }}>{small && "≈"}<CountUp value={gp} suffix="%ile" /></div></div>
+            <div><div className="eyebrow">전체 백분위</div><div className="mono" style={{ fontSize: "2rem", fontWeight: 700 }}>{small && "≈"}<CountUp value={up} suffix="%ile" /></div></div>
           </div>
         </Reveal>
       </main>
@@ -154,10 +161,14 @@ export default async function FacultyCard({ params }: { params: Promise<{ id: st
                       <span style={{ width: 12, height: 12, borderRadius: 3, background: color, display: "inline-block" }} />{AREA[a].full}
                     </span>
                     <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
-                      표준화 <span className="mono" style={{ color: "var(--text)", fontWeight: 700 }}>{row.std.toFixed(0)}</span><span style={{ color: "var(--border-strong)" }}>/100</span>
+                      지수 <span className="mono" style={{ color: "var(--text)", fontWeight: 700 }}>{row.std.toFixed(0)}</span> <span style={{ color: "var(--border-strong)" }}>· 기준 100</span>
                     </span>
                   </div>
-                  <Meter value={row.std} max={120} color={color} height={9} />
+                  {/* 기준 100 지수: 벤치마크 달성 시 100. 0~200 스케일에 기준선(100=50%) 병기 → '/100 만점' 오해 방지 */}
+                  <div style={{ position: "relative" }}>
+                    <Meter value={row.std} max={200} color={color} height={9} />
+                    <div style={{ position: "absolute", top: -2, left: "50%", width: 2, height: "calc(100% + 4px)", background: "var(--text-2)", opacity: 0.65 }} title="기준 100" />
+                  </div>
                   <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: 4 }}>원점수 <span className="mono" style={{ color: "var(--text-2)" }}>{row.raw.toFixed(0)}</span> · 가중 {row.weight}% · 학과 <span className="mono" style={{ color: "var(--text-2)" }}>{row.pct}%ile</span></div>
                 </div>
               );
@@ -174,10 +185,15 @@ export default async function FacultyCard({ params }: { params: Promise<{ id: st
                 <span className="mono chip" style={{ fontSize: "0.6rem" }}>{b.key}</span>
                 <span style={{ fontSize: "0.78rem", width: 68, flexShrink: 0 }}>{b.label}</span>
                 <span className="mono" style={{ fontSize: "0.7rem", color: "var(--muted)", width: 46, flexShrink: 0 }}>{b.metric}</span>
-                <div style={{ flex: 1, minWidth: 40 }}><Meter value={b.pts} max={1.5} color="var(--grade-S)" height={6} /></div>
-                <span className="mono" style={{ fontSize: "0.76rem", fontWeight: 600, width: 40, textAlign: "right", flexShrink: 0, color: b.pts > 0 ? "var(--ok)" : "var(--muted)" }}>+{b.pts.toFixed(2)}</span>
+                {/* 각 가점의 개별 상한(cap)을 max로 사용 → cap이 다른 항목의 채움 비율 왜곡 방지 */}
+                <div style={{ flex: 1, minWidth: 40 }}><Meter value={b.pts} max={b.cap ?? 1.5} color="var(--grade-S)" height={6} /></div>
+                <span className="mono" style={{ fontSize: "0.76rem", fontWeight: 600, width: 62, textAlign: "right", flexShrink: 0, color: b.pts > 0 ? "var(--ok)" : "var(--muted)" }}>+{b.pts.toFixed(2)}<span style={{ color: "var(--muted)", fontWeight: 400 }}>/{(b.cap ?? 1.5).toFixed(1)}</span></span>
               </div>
             ))}
+          </div>
+          {/* 패널 높이 균형(빈 컬럼 방지) + 가점 정책 요약 */}
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border)", fontSize: "0.7rem", color: "var(--muted)", lineHeight: 1.65 }}>
+            신설 2단계 가점 5종은 각각 개별 상한(막대의 100% 지점)이 다릅니다 — FWCI 최대 1.5, 국제공동·오픈액세스·창업지도 각 1.0, AI·디지털 0.5. 5종 합산은 <b style={{ color: "var(--text-2)" }}>+{scoreMax.bonusCap.toFixed(1)}점</b>을 넘지 못하며, 종합점수(기준 100)에 가산됩니다.
           </div>
         </Reveal>
       </section>
@@ -233,12 +249,12 @@ function TrendStat({ label, value, sub }: { label: string; value: React.ReactNod
   );
 }
 
-function Denied({ reason }: { reason?: string }) {
+function Denied({ reason, title }: { reason?: string; title?: string }) {
   return (
     <main className="wrap" style={{ padding: "4rem 0" }}>
       <div className="panel" style={{ padding: "3rem", textAlign: "center", maxWidth: 560, margin: "0 auto" }}>
-        <div style={{ fontSize: "2rem" }}>🔒</div>
-        <h1 style={{ fontSize: "1.3rem", margin: "12px 0 6px" }}>접근 권한이 없습니다</h1>
+        <div style={{ fontSize: "2rem" }}>{title ? "🔎" : "🔒"}</div>
+        <h1 style={{ fontSize: "1.3rem", margin: "12px 0 6px" }}>{title ?? "접근 권한이 없습니다"}</h1>
         <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>{reason ?? "현재 역할의 접근 범위를 벗어났습니다."}</p>
         <Link href="/dashboard" className="chip" style={{ marginTop: 16, display: "inline-flex", cursor: "pointer" }}>대시보드로 이동</Link>
       </div>

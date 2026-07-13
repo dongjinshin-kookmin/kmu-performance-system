@@ -10,13 +10,13 @@ const CARDS = [
 
 export default function IndicatorsHub() {
   return (
-    <main className="wrap" style={{ padding: "2rem 0 4rem" }}>
+    <main className="wrap" style={{ padding: "1.6rem 0 2rem" }}>
       <Reveal>
         <div className="eyebrow">지표체계 v1.2 · param 테이블 실시간 조회</div>
         <h1 style={{ fontSize: "2.1rem", fontWeight: 800, letterSpacing: "-0.03em", margin: "6px 0 4px" }}>지표 · 배점표</h1>
         <p style={{ color: "var(--muted)", fontSize: "0.85rem", maxWidth: "60ch" }}>교원·직원 지표체계는 배점 구조·파라미터가 완전히 다릅니다. 직군을 선택하세요.</p>
       </Reveal>
-      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16, marginTop: 22 }}>
+      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16, marginTop: 16 }}>
         {CARDS.map((c, i) => (
           <Reveal key={c.href} delay={i * 0.08}>
             <Link href={c.href} className="panel row-hover" style={{ display: "block", padding: "1.6rem 1.7rem", cursor: "pointer", borderLeft: `4px solid ${c.color}`, height: "100%" }}>

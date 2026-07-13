@@ -14,17 +14,18 @@ export default async function Workflow() {
   const rows = isStaff ? staffWorkflowQueue(s) : workflowQueue(s);
   const totalSteps = isStaff ? 9 : 7;
   const def = ROLES[s.role];
+  const masked = !ROLES[s.role].seeIndividualRaw; // 총장 등 마스킹 역할: 실명 비노출
   const byStatus: Record<string, number> = {};
   for (const r of rows) byStatus[r.status] = (byStatus[r.status] || 0) + 1;
 
   return (
     <main className="wrap" style={{ padding: "2rem 0 4rem" }}>
       <Reveal>
-        <div className="eyebrow">2025 사이클 · 7단계 워크플로</div>
+        <div className="eyebrow">{isStaff ? "2025-2 반기 · 9단계" : "2025 사이클 · 7단계"} 워크플로</div>
         <h1 style={{ fontSize: "2.1rem", fontWeight: 800, letterSpacing: "-0.03em", margin: "6px 0 4px" }}>
           {s.role === "EVAL_COMMITTEE" ? "평가위원 심의 대기열" : s.role === "FACULTY" || s.role === "STAFF" ? "내 평가 진행" : isStaff ? "부서 평가 진행" : "평가 워크플로"}
         </h1>
-        <p style={{ color: "var(--muted)", fontSize: "0.84rem" }}>{def.name} 접근 범위 · {rows.length}건 {isStaff ? "· 2025-2학기 반기 평가" : "· 2025 사이클"}</p>
+        <p style={{ color: "var(--muted)", fontSize: "0.84rem" }}>{def.name} 접근 범위 · {rows.length}건 {isStaff ? "· 2025-2 반기 평가" : "· 2025 사이클"}</p>
       </Reveal>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "16px 0" }}>
@@ -41,7 +42,7 @@ export default async function Workflow() {
             <Link href={`/workflow/${r.id}`} className="panel row-hover" style={{ display: "block", padding: "1rem 1.1rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{r.name}</div>
+                  <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{masked ? `${isStaff ? "직원" : "교원"} ${String(r.pid).padStart(3, "0")}` : r.name}</div>
                   <div style={{ fontSize: "0.74rem", color: "var(--muted)" }}>{r.dept}</div>
                 </div>
                 <GradeBadge grade={r.grade} size="sm" />
@@ -51,6 +52,7 @@ export default async function Workflow() {
                   {STATUS_LABEL[r.status]} · {r.step}/{totalSteps}
                 </span>
                 {r.version === "V_2024" && <span className="chip" style={{ fontSize: "0.6rem" }}>{r.gate ? "게이트 충족" : "게이트 미충족"}</span>}
+                {r.appeals > 0 && <span className="chip" style={{ fontSize: "0.6rem", color: r.appealStatus === "ACCEPTED" ? "var(--ok)" : "var(--bad)", borderColor: r.appealStatus === "ACCEPTED" ? "var(--ok)" : "var(--bad)" }}>{r.appealStatus === "ACCEPTED" ? "이의 인용" : "이의 기각"}</span>}
                 {r.mgrRole && <span className="chip" style={{ fontSize: "0.6rem" }}>{r.mgrRole === "DEPT_HEAD" ? "부서장" : "팀장"}</span>}
                 <span className="mono" style={{ marginLeft: "auto", fontWeight: 700, fontSize: "1rem" }}>{r.score}</span>
               </div>

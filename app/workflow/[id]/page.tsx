@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { getSession } from "@/lib/rbac";
-import { evalById, workflowSteps, canViewPerson, workflowStaticIds } from "@/lib/queries";
+import { evalById, workflowSteps, canViewPerson, workflowStaticIds, evalAppeals } from "@/lib/queries";
 import { Reveal, GradeBadge } from "@/components/ui";
 import { Stepper } from "@/components/Stepper";
-import { STATUS_LABEL, VERSION_LABEL, TRACK_LABEL } from "@/lib/format";
+import { STATUS_LABEL, VERSION_LABEL, TRACK_LABEL, cycleLabel } from "@/lib/format";
 
 export function generateStaticParams() {
   return workflowStaticIds().map((id) => ({ id: String(id) }));
@@ -17,7 +17,10 @@ export default async function WorkflowDetail({ params }: { params: Promise<{ id:
   const isStaff = e.cycle > 20000;
   const perm = canViewPerson(s, e.pid);
   const steps = workflowSteps(id);
+  const appeals = evalAppeals(id);
   const canCard = perm.ok && !perm.masked;
+  const cyc = cycleLabel(e.cycle);
+  const maskedName = `${isStaff ? "직원" : "교원"} ${String(e.pid).padStart(3, "0")}`;
 
   return (
     <main className="wrap" style={{ padding: "2rem 0 4rem", maxWidth: 920 }}>
@@ -25,8 +28,8 @@ export default async function WorkflowDetail({ params }: { params: Promise<{ id:
         <Link href="/workflow" className="chip" style={{ cursor: "pointer", marginBottom: 14, display: "inline-flex" }}>← 워크플로 목록</Link>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
           <div>
-            <div className="eyebrow">{e.dept} · 2025 평가</div>
-            <h1 style={{ fontSize: "1.9rem", fontWeight: 800, margin: "6px 0 8px" }}>{perm.masked ? `교원 ${String(e.pid).padStart(3, "0")}` : e.name}</h1>
+            <div className="eyebrow">{e.dept} · {cyc} 평가</div>
+            <h1 style={{ fontSize: "1.9rem", fontWeight: 800, margin: "6px 0 8px" }}>{perm.masked ? maskedName : e.name}</h1>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {e.rank && <span className="chip">{e.rank}</span>}
               {e.track && <span className="chip">{TRACK_LABEL[e.track]}</span>}
@@ -85,6 +88,28 @@ export default async function WorkflowDetail({ params }: { params: Promise<{ id:
           {canCard && <Link href={`${isStaff ? "/staff" : "/faculty"}/${e.pid}`} className="chip" style={{ marginTop: 16, cursor: "pointer", display: "inline-flex", borderColor: "var(--accent)", color: "var(--accent)" }}>성과카드 열기 →</Link>}
         </Reveal>
       </section>
+
+      {/* B3: 이의신청·반려(재심) 이력 — fact_appeal */}
+      {appeals.length > 0 && (
+        <Reveal className="panel" style={{ padding: "1.3rem 1.4rem", marginTop: 14, borderColor: "var(--warn)" }}>
+          <div className="eyebrow" style={{ color: "var(--warn)" }}>이의신청 · 재심 이력</div>
+          <h2 style={{ fontSize: "1.05rem", margin: "4px 0 14px" }}>이의신청 {appeals.length}건</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {appeals.map((ap: any, i: number) => {
+              const accepted = ap.status === "ACCEPTED";
+              return (
+                <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", paddingBottom: i < appeals.length - 1 ? 12 : 0, borderBottom: i < appeals.length - 1 ? "1px solid var(--border)" : "none" }}>
+                  <span className="chip" style={{ fontSize: "0.64rem", color: accepted ? "var(--ok)" : "var(--bad)", borderColor: accepted ? "var(--ok)" : "var(--bad)", fontWeight: 700, flexShrink: 0 }}>{accepted ? "인용(승인)" : "기각(반려)"}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: "0.85rem", fontWeight: 600 }}>{ap.reason}</div>
+                    <div style={{ fontSize: "0.74rem", color: "var(--text-2)", marginTop: 3 }}>처리 결과: {ap.resolution} · 신청 {ap.filedAt} → 처리 {ap.resolvedAt}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Reveal>
+      )}
     </main>
   );
 }

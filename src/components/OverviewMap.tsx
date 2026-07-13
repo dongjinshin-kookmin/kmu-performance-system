@@ -52,16 +52,22 @@ export function OverviewMap({ data, initialSel }: { data: OverviewData; initialS
     return new Set([...data.people].sort((a, b) => b.score - a.score).slice(0, k).map((p) => p.id));
   }, [data.people]);
 
-  // X = 성과 모멘텀(Δ). 데이터 범위 + 여유 패딩.
-  const xs = data.people.map((p) => p.x);
-  const xLoRaw = Math.min(...xs), xHiRaw = Math.max(...xs);
-  const xr = xHiRaw - xLoRaw || 2, xpad = xr * 0.08 + 0.6;
-  const xMin = +(xLoRaw - xpad).toFixed(2), xMax = +(xHiRaw + xpad).toFixed(2);
+  // X = 성과 모멘텀(Δ). Δ는 전년 대비 종합점수 변화로, 연도 간 지속성이 낮아(상관 ~0.1)
+  // 소수 극단치(±100 이상)가 발생한다. 원시 min/max로 도메인을 잡으면 이 극단치가 축을
+  // 늘려 다수 구성원이 중앙에 뭉쳐 보이므로(분산 붕괴), 5~95 백분위 기준의 견고한 도메인을
+  // 쓰고 그 밖의 점은 경계로 클램프한다. 사분면 분류(quad)는 서버에서 실제 Δ로 이미 계산됨.
+  const xs = [...data.people.map((p) => p.x)].sort((a, b) => a - b);
+  const pctX = (q: number) => xs[Math.min(xs.length - 1, Math.max(0, Math.round((xs.length - 1) * q)))] ?? 0;
+  let xLoR = Math.min(pctX(0.05), data.meanX), xHiR = Math.max(pctX(0.95), data.meanX);
+  if (xHiR - xLoR < 2) { xLoR -= 1; xHiR += 1; } // 스프레드가 거의 없으면 최소 폭 확보
+  const xpad = (xHiR - xLoR) * 0.06 + 0.6;
+  const xMin = +(xLoR - xpad).toFixed(2), xMax = +(xHiR + xpad).toFixed(2);
+  const clampX = (x: number) => Math.max(xLoR, Math.min(xHiR, x));
   const scores = data.people.map((p) => p.score);
   const yLo = Math.floor((Math.min(...scores) - 4) / 5) * 5, yHi = Math.ceil((Math.max(...scores) + 4) / 5) * 5;
   const dSign = (v: number) => `${v > 0 ? "+" : ""}${v}`;
 
-  const pts = data.people.map((p) => ({ ...p, y: p.score }));
+  const pts = data.people.map((p) => ({ ...p, x: clampX(p.x), y: p.score }));
   const passTier = (p: OPerson) => tierFilter == null || p.tierKey === tierFilter;
   const passQuad = (p: OPerson) => filter == null ? true : filter === "top10" ? top10.has(p.id) : p.quad === filter;
   const visible = pts.filter((p) => passTier(p) && passQuad(p));
@@ -144,12 +150,13 @@ export function OverviewMap({ data, initialSel }: { data: OverviewData; initialS
                 label={{ value: `▸ ${data.xLabel}`, position: "insideBottom", offset: -18, fill: tick, fontSize: 12.5 }} />
               <YAxis type="number" dataKey="y" domain={[yLo, yHi]} tick={{ fill: tick, fontSize: 12.5 }} axisLine={false} tickLine={false} width={42}
                 label={{ value: data.yLabel, angle: -90, position: "insideLeft", offset: 16, fill: tick, fontSize: 12, style: { textAnchor: "middle" } }} />
-              {xMin < 0 && xMax > 0 && <ReferenceLine x={0} stroke={tick} strokeDasharray="1 4" strokeWidth={1} ifOverflow="hidden"
-                label={{ value: "Δ=0", position: "insideBottomLeft", fill: tick, fontSize: 10.5, opacity: 0.8 }} />}
+              {/* Δ=0 얇은 회색 점선(라벨 없음 — 사분면 코너 라벨과 겹침 방지, 각주로 설명) */}
+              {xMin < 0 && xMax > 0 && <ReferenceLine x={0} stroke={tick} strokeDasharray="1 4" strokeWidth={1} ifOverflow="hidden" />}
+              {/* 평균선 라벨을 코너가 아닌 변의 중앙에 배치 → '스타/평균', '성장유망/집중관리' 코너 겹침 해소 */}
               <ReferenceLine x={data.meanX} stroke="var(--accent)" strokeDasharray="5 4" strokeWidth={1.5} ifOverflow="hidden"
-                label={{ value: `평균 Δ ${dSign(data.meanX)}`, position: "insideTopLeft", fill: "var(--accent)", fontSize: 11.5, fontWeight: 700 }} />
+                label={{ value: `평균 Δ ${dSign(data.meanX)}`, position: "insideTop", fill: "var(--accent)", fontSize: 11.5, fontWeight: 700 }} />
               <ReferenceLine y={data.meanY} stroke="var(--accent)" strokeDasharray="5 4" strokeWidth={1.5} ifOverflow="hidden"
-                label={{ value: `평균 ${data.meanY}`, position: "insideTopRight", fill: "var(--accent)", fontSize: 12, fontWeight: 700 }} />
+                label={{ value: `평균 ${data.meanY}`, position: "insideLeft", fill: "var(--accent)", fontSize: 12, fontWeight: 700 }} />
               <Tooltip cursor={{ strokeDasharray: "3 3" }} content={({ active, payload }) => active && payload?.length ? (() => {
                 const p = payload[0].payload as OPerson;
                 return <div style={{ background: "var(--elevated)", border: "1px solid var(--border-strong)", borderRadius: 8, padding: "0.45rem 0.65rem", fontSize: "0.76rem", boxShadow: "var(--shadow-md)" }}>
@@ -182,8 +189,12 @@ export function OverviewMap({ data, initialSel }: { data: OverviewData; initialS
             ))}
           </div>
           <p style={{ fontSize: "0.7rem", color: "var(--muted)", margin: "8px 4px 0", lineHeight: 1.5 }}>
-            X축은 <b>성과 모멘텀</b>({data.deltaLabel} 종합점수 변화 Δ), Y축은 현재 종합점수입니다. 세로 점선은 <b style={{ color: "var(--accent)" }}>평균 Δ</b>(우측=평균 이상 상승), 가로 점선은 평균 종합점수로 4사분면을 구분합니다. 점 <b>모양</b>은 직급, <b>색</b>은 사분면이며, <b style={{ color: TOP10 }}>종합점수 상위 10%</b>는 진한 파랑·큰 점으로 강조됩니다. Δ는 실제값이라 지터를 최소화했습니다.
-            {data.kpi.noDelta > 0 && <> 직전 평가 기록이 없는 <b>{data.kpi.noDelta}명</b>은 Δ=0(중앙)으로 표시합니다.</>}
+            X축은 <b>성과 모멘텀</b>({data.deltaLabel} 종합점수 변화 Δ), Y축은 현재 종합점수입니다. 세로 점선은 <b style={{ color: "var(--accent)" }}>평균 Δ</b>(우측=평균 이상 상승), 가로 점선은 평균 종합점수로 4사분면을 구분하며, 얇은 회색 점선은 <b>Δ=0</b>(절대 유지선)입니다. 점 <b>모양</b>은 직급, <b>색</b>은 사분면이며, <b style={{ color: TOP10 }}>종합점수 상위 10%</b>는 진한 파랑·큰 점으로 강조됩니다.
+            {" "}종합점수는 {data.kind === "faculty"
+              ? <>교원 <b>기준환산 지수</b>(트랙·계열 벤치마크를 100으로 표준화 — 100 초과 가능)</>
+              : <>직원 <b>정규화 지수</b>(정기 90점/기능 200점 만점을 100 기준으로 정규화)</>}입니다.
+            {" "}Δ의 연도 간 편차가 커 소수 극단치가 있어, X 도메인은 5~95 백분위 기준으로 잡고 그 밖은 경계로 표시했습니다.
+            {data.kpi.noDelta > 0 && <> 직전 평가 기록이 없는 <b>{data.kpi.noDelta}명</b>(신임 등)은 Δ=0(중앙)으로 표시합니다.</>}
           </p>
         </div>
 

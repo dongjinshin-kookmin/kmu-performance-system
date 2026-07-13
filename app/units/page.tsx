@@ -29,7 +29,7 @@ export default async function Units({ searchParams }: { searchParams: Promise<{ 
   return (
     <main className="wrap" style={{ padding: "2rem 0 4rem" }}>
       <Reveal>
-        <div className="eyebrow">2025-2학기 · {scoped ? "부서 뷰" : "부서 KPI · BSC 캐스케이딩"}</div>
+        <div className="eyebrow">2025-2 반기 · {scoped ? "부서 뷰" : "부서 KPI · BSC 캐스케이딩"}</div>
         <h1 style={{ fontSize: "2.1rem", fontWeight: 800, letterSpacing: "-0.03em", margin: "6px 0 4px" }}>부서 KPI 대시보드</h1>
         <p style={{ color: "var(--muted)", fontSize: "0.82rem" }}>🟩제안 · 대학 전략 → 부서 KPI(BSC 4관점) → 개인 MBO 하향정렬</p>
       </Reveal>
@@ -117,7 +117,7 @@ export default async function Units({ searchParams }: { searchParams: Promise<{ 
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.76rem", color: "var(--text-2)" }}>
                           <span style={{ color: "var(--muted)" }}>↳</span>
                           <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{g.goal}</span>
-                          <span style={{ color: "var(--muted)", fontSize: "0.7rem" }}>{g.person}</span>
+                          <span style={{ color: "var(--muted)", fontSize: "0.7rem" }}>{canLink ? g.person : "익명"}</span>
                           <span className="mono" style={{ fontWeight: 600, color: g.rate >= 100 ? "var(--ok)" : "var(--warn)", width: 40, textAlign: "right" }}>{g.rate}%</span>
                         </div>
                       ))}

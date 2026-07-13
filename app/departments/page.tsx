@@ -56,7 +56,7 @@ export default async function Departments({ searchParams }: { searchParams: Prom
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", marginBottom: 3 }}>
                       <span style={{ fontWeight: sel ? 700 : 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.dept}</span>
-                      <span className="mono" style={{ fontWeight: 600 }}>{d.score} <span style={{ color: "var(--muted)", fontWeight: 400 }}>·{d.n}</span></span>
+                      <span className="mono" style={{ fontWeight: 600 }}>{d.score.toFixed(1)} <span style={{ color: "var(--muted)", fontWeight: 400 }}>·{d.n}</span></span>
                     </div>
                     <Meter value={d.score - 70} max={25} color={sel ? "var(--accent)" : i < 3 ? "var(--area-R)" : "var(--border-strong)"} height={5} />
                   </span>
@@ -79,7 +79,7 @@ export default async function Departments({ searchParams }: { searchParams: Prom
                   <span className="mono" style={{ color: "var(--muted)", fontSize: "0.78rem" }}><CountUp value={detail.length} />명</span>
                 </div>
                 <div className="eyebrow" style={{ fontSize: "0.6rem", margin: "14px 0 2px" }}>구성원 종합점수 분포</div>
-                <DeptStrip scores={detail.map((x: any) => ({ name: x.name, t: x.t, grade: x.grade }))} />
+                <DeptStrip scores={detail.map((x: any) => ({ name: canLink ? x.name : `교원 ${String(x.id).padStart(3, "0")}`, t: x.t, grade: x.grade }))} />
                 {r && <div style={{ margin: "10px 0 16px" }}><GradeStack dist={dist} height={26} /></div>}
                 <div className="eyebrow" style={{ fontSize: "0.6rem", marginBottom: 8 }}>구성원 {canLink ? "(클릭 → 성과카드)" : "(총장 뷰 · 익명)"}</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 3, maxHeight: 300, overflowY: "auto" }}>
