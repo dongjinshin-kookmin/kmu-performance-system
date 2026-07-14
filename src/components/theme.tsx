@@ -2,12 +2,12 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 type Theme = "light" | "dark";
-const ThemeCtx = createContext<{ theme: Theme; isDark: boolean; toggle: () => void }>({ theme: "dark", isDark: true, toggle: () => {} });
+const ThemeCtx = createContext<{ theme: Theme; isDark: boolean; toggle: () => void }>({ theme: "light", isDark: false, toggle: () => {} });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
   useEffect(() => {
-    const saved = (localStorage.getItem("kmu-theme") as Theme) || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    const saved = (localStorage.getItem("kmu-theme") as Theme) || "light";
     setTheme(saved);
     document.documentElement.setAttribute("data-theme", saved);
   }, []);

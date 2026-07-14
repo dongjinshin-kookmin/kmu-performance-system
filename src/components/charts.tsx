@@ -22,14 +22,14 @@ function useC() {
 }
 
 function Box({ children }: { children: any }) {
-  return <div style={{ background: "var(--elevated)", border: "1px solid var(--border-strong)", borderRadius: 8, padding: "0.5rem 0.7rem", boxShadow: "var(--shadow-md)", fontSize: "0.78rem" }}>{children}</div>;
+  return <div style={{ background: "var(--elevated)", border: "1px solid var(--border-strong)", borderRadius: 10, padding: "0.6rem 0.8rem", boxShadow: "var(--shadow-md)", fontSize: "0.86rem" }}>{children}</div>;
 }
 
 // ── 연도 추이 (종합점수 라인 + 그라디언트 area) ──
 export function TrendLine({ data }: { data: { year: number; score: number }[] }) {
   const c = useC();
   return (
-    <ResponsiveContainer width="100%" height={210}>
+    <ResponsiveContainer width="100%" height={230}>
       <AreaChart data={data} margin={{ top: 10, right: 12, left: -18, bottom: 0 }}>
         <defs>
           <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
@@ -38,8 +38,8 @@ export function TrendLine({ data }: { data: { year: number; score: number }[] })
           </linearGradient>
         </defs>
         <CartesianGrid stroke={c.grid} vertical={false} />
-        <XAxis dataKey="year" tick={{ fill: c.tick, fontSize: 13 }} axisLine={{ stroke: c.axis }} tickLine={false} />
-        <YAxis domain={[70, 95]} tick={{ fill: c.tick, fontSize: 12 }} axisLine={false} tickLine={false} width={44} />
+        <XAxis dataKey="year" tick={{ fill: c.tick, fontSize: 15, fontWeight: 600 }} axisLine={{ stroke: c.axis }} tickLine={false} />
+        <YAxis domain={[70, 95]} tick={{ fill: c.tick, fontSize: 14, fontWeight: 600 }} axisLine={false} tickLine={false} width={48} />
         <Tooltip content={({ active, payload, label }) => active && payload?.length ? <Box><b>{label}년</b> · 종합 {payload[0].value}</Box> : null} />
         <Area type="monotone" dataKey="score" stroke={c.area("R")} strokeWidth={2.5} fill="url(#tg)" dot={{ r: 4, fill: c.area("R"), strokeWidth: 0 }} activeDot={{ r: 6 }} animationDuration={1100} animationEasing="ease-out" />
       </AreaChart>
@@ -124,13 +124,13 @@ export function TrendChart({ data, shade = 2, height = 244 }: { data: { x: strin
 export function GroupBars({ data }: { data: { grp: string; label: string; score: number; n: number }[] }) {
   const c = useC();
   return (
-    <ResponsiveContainer width="100%" height={Math.max(160, data.length * 46)}>
-      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 40, left: 8, bottom: 4 }} barCategoryGap={12}>
+    <ResponsiveContainer width="100%" height={Math.max(180, data.length * 50)}>
+      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 46, left: 8, bottom: 4 }} barCategoryGap={12}>
         <CartesianGrid stroke={c.grid} horizontal={false} />
-        <XAxis type="number" domain={[75, 95]} tick={{ fill: c.tick, fontSize: 12 }} axisLine={false} tickLine={false} />
-        <YAxis type="category" dataKey="label" width={120} tick={{ fill: c.text, fontSize: 13 }} axisLine={false} tickLine={false} />
+        <XAxis type="number" domain={[75, 95]} tick={{ fill: c.tick, fontSize: 14, fontWeight: 600 }} axisLine={false} tickLine={false} />
+        <YAxis type="category" dataKey="label" width={136} tick={{ fill: c.text, fontSize: 15, fontWeight: 600 }} axisLine={false} tickLine={false} />
         <Tooltip cursor={{ fill: c.grid, opacity: 0.3 }} content={({ active, payload }) => active && payload?.length ? <Box><b>{payload[0].payload.label}</b><br />평균 {payload[0].value} · {payload[0].payload.n}명</Box> : null} />
-        <Bar dataKey="score" radius={[0, 4, 4, 0]} isAnimationActive={false} label={{ position: "right", fill: c.tick, fontSize: 11, formatter: (v: number) => v.toFixed(1) }}>
+        <Bar dataKey="score" radius={[0, 5, 5, 0]} isAnimationActive={false} label={{ position: "right", fill: c.tick, fontSize: 14, fontWeight: 700, formatter: (v: number) => v.toFixed(1) }}>
           {data.map((d, i) => <Cell key={i} fill={c.area(["R", "E", "I", "S"][i % 4] as AreaKey)} />)}
         </Bar>
       </BarChart>
@@ -153,14 +153,14 @@ export function GradeStack({ dist, height = 34 }: { dist: Record<string, number>
           return (
             <motion.div key={g} initial={{ width: 0 }} animate={{ width: `${w}%` }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
               title={`${g} ${n}명`} style={{ background: c.grade(g), display: "flex", alignItems: "center", justifyContent: "center", borderRight: "2px solid var(--surface)" }}>
-              {w > 7 && <span className="mono" style={{ fontSize: "0.7rem", color: "#fff", fontWeight: 700 }}>{g} {n}</span>}
+              {w > 7 && <span className="mono" style={{ fontSize: "0.76rem", color: "#fff", fontWeight: 700 }}>{g} {n}</span>}
             </motion.div>
           );
         })}
       </div>
       <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
         {order.map((g) => (
-          <span key={g} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.72rem", color: "var(--text-2)" }}>
+          <span key={g} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.78rem", color: "var(--text-2)" }}>
             <span style={{ width: 10, height: 10, borderRadius: 3, background: c.grade(g) }} />{g} <span className="mono" style={{ color: "var(--muted)" }}>{dist[g] || 0}</span>
           </span>
         ))}

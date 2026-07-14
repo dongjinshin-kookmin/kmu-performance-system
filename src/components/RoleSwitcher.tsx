@@ -44,15 +44,15 @@ export function RoleSwitcher({ role, viewer, faculty, chairs, staff, leads, head
     <div style={{ position: "relative" }}>
       {card ? (
         <button onClick={() => setOpen((o) => !o)} aria-expanded={open}
-          style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "var(--surface-2)", border: `1px solid ${accent}`, borderLeft: `4px solid ${accent}`, borderRadius: 12, padding: "0.85rem 0.9rem", cursor: "pointer", color: "var(--text)", boxShadow: "var(--shadow-md)" }}>
-          <span style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, display: "grid", placeItems: "center", fontSize: "1.35rem", background: `color-mix(in srgb, ${accent} 16%, transparent)`, border: `1px solid ${accent}` }}>{icon ?? "●"}</span>
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 15, padding: "0.9rem", cursor: "pointer", color: "var(--text)", boxShadow: "var(--shadow-sm)" }}>
+          <span style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: "1.35rem", background: `color-mix(in srgb, ${accent} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 42%, var(--border))` }}>{icon ?? "●"}</span>
           <span style={{ minWidth: 0, flex: 1 }}>
-            <span className="eyebrow" style={{ fontSize: "0.55rem" }}>현재 권한 · 클릭하여 전환</span>
-            <div style={{ fontSize: "1.02rem", fontWeight: 700, letterSpacing: "-0.01em", color: accent, marginTop: 1 }}>{META[role].name}</div>
-            {viewerLabel && <div style={{ fontSize: "0.72rem", color: "var(--text-2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{viewerLabel}</div>}
-            {desc && <div style={{ fontSize: "0.66rem", color: "var(--muted)", marginTop: 2, lineHeight: 1.3 }}>{desc}</div>}
+            <span className="eyebrow" style={{ fontSize: "0.69rem" }}>현재 권한 · 눌러서 전환</span>
+            <div style={{ fontSize: "1.02rem", fontWeight: 700, letterSpacing: "-0.01em", color: "var(--text)", marginTop: 2 }}>{META[role].name}</div>
+            {viewerLabel && <div style={{ fontSize: "0.76rem", color: "var(--text-2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{viewerLabel}</div>}
+            {desc && <div style={{ fontSize: "0.72rem", color: "var(--muted)", marginTop: 2, lineHeight: 1.45 }}>{desc}</div>}
           </span>
-          <span className="mono" style={{ color: "var(--muted)", fontSize: "0.72rem" }}>▾</span>
+          <span className="mono" style={{ color: "var(--muted)", fontSize: "0.8rem" }}>▾</span>
         </button>
       ) : (
       <button onClick={() => setOpen((o) => !o)} aria-expanded={open}
@@ -71,15 +71,15 @@ export function RoleSwitcher({ role, viewer, faculty, chairs, staff, leads, head
             <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
             <motion.div initial={{ opacity: 0, y: -8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.98 }} transition={{ duration: 0.18 }}
               style={{ position: "absolute", top: "calc(100% + 8px)", left: card ? 0 : "auto", right: card ? "auto" : 0, width: 320, maxWidth: "88vw", zIndex: 60, background: "var(--elevated)", border: "1px solid var(--border-strong)", borderRadius: 12, boxShadow: "var(--shadow-lg)", padding: 8 }}>
-              <div className="eyebrow" style={{ padding: "6px 8px" }}>역할 전환 · RBAC 시뮬레이터</div>
+              <div className="eyebrow" style={{ padding: "8px 8px" }}>역할 전환 · 권한별 화면 확인</div>
               {GROUPS.map((g) => (
                 <div key={g.title} style={{ marginBottom: 4 }}>
-                  <div style={{ fontSize: "0.62rem", color: "var(--muted)", padding: "4px 8px 2px", fontWeight: 700 }}>{g.title}</div>
+                  <div style={{ fontSize: "0.74rem", color: "var(--muted)", padding: "6px 8px 3px", fontWeight: 700 }}>{g.title}</div>
                   {g.roles.map((r) => (
                     <button key={r} onClick={() => apply(r, firstViewer(r))}
-                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", textAlign: "left", padding: "7px 10px", borderRadius: 8, border: "none", cursor: "pointer", background: r === role ? "var(--accent-soft)" : "transparent", color: "var(--text)" }}>
-                      <span style={{ fontSize: "0.84rem", fontWeight: r === role ? 700 : 500 }}>{META[r].name}</span>
-                      <span className="mono chip" style={{ fontSize: "0.6rem", padding: "1px 6px" }}>{META[r].scope}</span>
+                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", minHeight: 45, textAlign: "left", padding: "8px 10px", borderRadius: 9, border: "none", cursor: "pointer", background: r === role ? "var(--accent-soft)" : "transparent", color: "var(--text)" }}>
+                      <span style={{ fontSize: "0.86rem", fontWeight: r === role ? 700 : 500 }}>{META[r].name}</span>
+                      <span className="mono chip" style={{ fontSize: "0.68rem", minHeight: 27, padding: "1px 7px" }}>{META[r].scope}</span>
                     </button>
                   ))}
                 </div>
@@ -88,7 +88,7 @@ export function RoleSwitcher({ role, viewer, faculty, chairs, staff, leads, head
                 <div style={{ borderTop: "1px solid var(--border)", marginTop: 6, paddingTop: 8 }}>
                   <div className="eyebrow" style={{ padding: "0 8px 6px" }}>{META[role].kind === "S" ? "직원 선택" : role === "DEPT_CHAIR" ? "학과장 선택" : "인물 선택"}</div>
                   <select value={viewer ?? ""} onChange={(e) => apply(role, Number(e.target.value))}
-                    style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border-strong)", background: "var(--surface-2)", color: "var(--text)", fontSize: "0.84rem" }}>
+                    style={{ width: "100%", padding: "10px 11px", borderRadius: 9, border: "1px solid var(--border-strong)", background: "var(--surface-2)", color: "var(--text)", fontSize: "0.86rem" }}>
                     {opts.map((o) => <option key={o.id} value={o.id}>{o.name} · {o.dept}</option>)}
                   </select>
                 </div>

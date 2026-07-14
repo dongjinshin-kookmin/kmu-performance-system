@@ -5,9 +5,9 @@ import { useEffect, useState, ReactNode } from "react";
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 /** 진입 시 아래→위 페이드 (CSS 키프레임 — 마운트 시 항상 실행) */
-export function Reveal({ children, delay = 0, className, style }: { children: ReactNode; delay?: number; y?: number; className?: string; style?: React.CSSProperties }) {
+export function Reveal({ children, delay = 0, className, style, id }: { children: ReactNode; delay?: number; y?: number; className?: string; style?: React.CSSProperties; id?: string }) {
   return (
-    <div className={`reveal ${className ?? ""}`} style={{ animationDelay: `${delay}s`, ...style }}>
+    <div id={id} className={`reveal ${className ?? ""}`} style={{ animationDelay: `${delay}s`, ...style }}>
       {children}
     </div>
   );
@@ -119,13 +119,12 @@ export function Delta({ value, unit = "", positive }: { value: number; unit?: st
 /** KPI 스탯 타일 (카운트업 + 진입) */
 export function StatTile({ label, value, decimals = 0, suffix = "", prefix = "", sub, accent = "var(--accent)", delay = 0, big }: { label: string; value: number; decimals?: number; suffix?: string; prefix?: string; sub?: ReactNode; accent?: string; delay?: number; big?: boolean }) {
   return (
-    <div className="panel reveal" style={{ padding: "1.1rem 1.2rem", overflow: "hidden", animationDelay: `${delay}s` }}>
-      <div style={{ position: "absolute", top: 0, left: 0, width: 3, height: "100%", background: accent, opacity: 0.85 }} />
-      <div className="eyebrow" style={{ marginBottom: 10 }}>{label}</div>
-      <div className="mono" style={{ fontSize: big ? "2.5rem" : "1.9rem", fontWeight: 700, lineHeight: 1, letterSpacing: "-0.02em", color: "var(--text)" }}>
+    <div className="panel reveal stat-tile" style={{ animationDelay: `${delay}s`, "--stat-accent": accent } as React.CSSProperties}>
+      <div className="stat-tile-label">{label}</div>
+      <div className="mono stat-tile-value" style={big ? { fontSize: "3.2rem" } : undefined}>
         {prefix}<CountUp value={value} decimals={decimals} suffix={suffix} />
       </div>
-      {sub && <div style={{ marginTop: 8, fontSize: "0.76rem", color: "var(--text-2)" }}>{sub}</div>}
+      {sub && <div className="stat-tile-sub">{sub}</div>}
     </div>
   );
 }
