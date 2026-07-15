@@ -41,9 +41,10 @@ export function RoleSwitcher({ role, viewer, faculty, chairs, staff, leads, head
   const accent = color ?? (META[role].kind === "S" ? "var(--area-I)" : META[role].kind === "F" ? "var(--area-R)" : "var(--accent)");
 
   return (
-    <div style={{ position: "relative" }}>
+    <div className={card ? "role-switcher role-switcher-card" : "role-switcher"} style={{ position: "relative" }}>
       {card ? (
         <button onClick={() => setOpen((o) => !o)} aria-expanded={open}
+          className="role-card-button"
           style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 15, padding: "0.9rem", cursor: "pointer", color: "var(--text)", boxShadow: "var(--shadow-sm)" }}>
           <span style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: "1.35rem", background: `color-mix(in srgb, ${accent} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 42%, var(--border))` }}>{icon ?? "●"}</span>
           <span style={{ minWidth: 0, flex: 1 }}>

@@ -11,13 +11,13 @@ function useC() {
   const { isDark } = useTheme();
   return {
     isDark,
-    grid: isDark ? "#282c37" : "#e6e4dd",
-    tick: isDark ? "#8b91a0" : "#8a909c",
-    axis: isDark ? "#3a3f4c" : "#d3d0c7",
+    grid: isDark ? "#283653" : "#e1e8f3",
+    tick: isDark ? "#9eabc4" : "#68758c",
+    axis: isDark ? "#42516d" : "#ccd7e7",
     area: (k: AreaKey) => AREA[k][isDark ? "dark" : "light"],
     grade: (g: string) => GRADE[g as keyof typeof GRADE][isDark ? "dark" : "light"],
-    surface: isDark ? "#1e222c" : "#ffffff",
-    text: isDark ? "#e9eaee" : "#1b1d23",
+    surface: isDark ? "#1d2941" : "#ffffff",
+    text: isDark ? "#f3f6fb" : "#17223a",
   };
 }
 
