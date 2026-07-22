@@ -10,7 +10,7 @@ type Sec = "faculty" | "staff" | "inst";
 interface Opt { id: number; name: string; dept: string; group: string; }
 interface Item { label: string; href: string; icon: IconName }
 interface Group { id: Sec; title: string; color: string; items: Item[] }
-type IconName = "home" | "faculty" | "staff" | "building" | "cards" | "compare" | "workflow" | "indicators" | "analysis" | "dictionary" | "settings" | "notice";
+type IconName = "home" | "faculty" | "staff" | "building" | "cards" | "compare" | "workflow" | "indicators" | "analysis" | "settings" | "notice";
 
 export interface SidebarProps {
   role: any; viewer: number | null; roleName: string; roleIcon: string; roleColor: string; roleDesc: string; viewerLabel: string;
@@ -42,7 +42,6 @@ export function Sidebar(p: SidebarProps) {
     { id: "inst", title: "기관 성과", color: "var(--accent)", items: [
       { label: "통합 대시보드", href: "/dashboard", icon: "home" },
       { label: "공시지표 대조", href: "/dashboard#disclosure", icon: "compare" },
-      { label: "UI 디자인 사전", href: "/design-dictionary", icon: "dictionary" },
     ] },
   ];
 
@@ -156,7 +155,6 @@ function MenuIcon({ name }: { name: IconName }) {
     workflow: <><circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h5a3 3 0 0 1 3 3v1M16 14v-2M16 14l-3-3M16 14l3-3M8 18h8"/></>,
     indicators: <><path d="M5 4v16M5 7h9M5 12h14M5 17h7"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="17" r="2"/></>,
     analysis: <><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5M8 12l2-3 2 2 2-4"/></>,
-    dictionary: <><path d="M4.5 5.5A3.5 3.5 0 0 1 8 3h4v17H8a3.5 3.5 0 0 0-3.5 1V5.5Z"/><path d="M19.5 5.5A3.5 3.5 0 0 0 16 3h-4v17h4a3.5 3.5 0 0 1 3.5 1V5.5Z"/><path d="M7.5 7H10M14 7h2.5"/></>,
     settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></>,
     notice: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 8h18c0-1-3-1-3-8"/><path d="M10 20h4"/></>,
   };
