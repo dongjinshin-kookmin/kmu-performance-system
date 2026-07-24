@@ -42,4 +42,4 @@ echo
 echo "DS916+ 배포 묶음을 생성했습니다:"
 echo "$bundle_dir"
 echo
-echo "이 폴더의 파일을 NAS의 /volume1/docker/kmu-performance/deploy 에 업로드하세요."
+echo "이 폴더의 파일을 NAS의 /volume2/docker/kmu-performance/deploy 에 업로드하세요."

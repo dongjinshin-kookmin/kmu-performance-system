@@ -19,7 +19,17 @@ else
 fi
 
 if [ ! -f .env ]; then
-  cp .env.example .env
+  if [ -f .env.example ]; then
+    cp .env.example .env
+  else
+    cat > .env <<'EOF'
+KMP_HOST_PORT=3100
+KMP_DATA_DIR=/volume2/docker/kmu-performance/data
+TZ=Asia/Seoul
+BACKUP_RETENTION_DAYS=30
+EOF
+    echo ".env 파일이 없어 볼륨 2 기준 기본 설정을 생성했습니다."
+  fi
 fi
 
 set -a
@@ -32,7 +42,7 @@ if [ ! -f "$archive" ]; then
   exit 1
 fi
 
-mkdir -p "${KMP_DATA_DIR:-/volume1/docker/kmu-performance/data}"
+mkdir -p "${KMP_DATA_DIR:-/volume2/docker/kmu-performance/data}"
 gzip -dc "$archive" | "$docker_bin" load
 
 if "$docker_bin" compose version >/dev/null 2>&1; then

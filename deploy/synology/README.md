@@ -18,7 +18,7 @@
 2. 제어판 → 터미널 및 SNMP에서 SSH 서비스를 잠시 활성화합니다.
 3. File Station에서 다음 폴더를 만듭니다.
 
-   `/volume1/docker/kmu-performance/deploy`
+   `/volume2/docker/kmu-performance/deploy`
 
 4. DSM 방화벽을 사용 중이면 내부망에서 TCP `3100` 포트만 허용합니다.
 
@@ -43,7 +43,9 @@ dist/synology-ds916/
 ```
 
 폴더 안의 파일을 모두 NAS의
-`/volume1/docker/kmu-performance/deploy`에 업로드합니다.
+`/volume2/docker/kmu-performance/deploy`에 업로드합니다.
+Finder에서 업로드할 때 `.env`와 `.env.example` 같은 숨김 파일이 빠져도
+`install.sh`가 볼륨 2 기준 `.env`를 자동으로 생성합니다.
 
 ## 3. NAS에서 최초 설치
 
@@ -51,7 +53,7 @@ Mac 터미널에서 NAS에 접속합니다.
 
 ```bash
 ssh DSM관리자계정@NAS_IP
-cd /volume1/docker/kmu-performance/deploy
+cd /volume2/docker/kmu-performance/deploy
 sudo sh install.sh
 ```
 
@@ -61,7 +63,7 @@ sudo sh install.sh
 http://NAS_IP:3100/dashboard
 ```
 
-최초 실행 시 `/volume1/docker/kmu-performance/data/kmu.db`가 자동으로 생성됩니다.
+최초 실행 시 `/volume2/docker/kmu-performance/data/kmu.db`가 자동으로 생성됩니다.
 컨테이너를 삭제하거나 교체해도 이 폴더의 데이터는 유지됩니다.
 
 ## 운영 명령
@@ -94,7 +96,7 @@ sudo docker start kmu-performance
 sudo docker exec kmu-performance backup-db
 ```
 
-백업은 `/volume1/docker/kmu-performance/data/backups`에 저장되며 기본 보존 기간은
+백업은 `/volume2/docker/kmu-performance/data/backups`에 저장되며 기본 보존 기간은
 30일입니다. DSM 제어판 → 작업 스케줄러에서 매일 다음 명령을 실행하도록 등록하면
 자동 백업할 수 있습니다.
 
@@ -108,10 +110,10 @@ NAS에서 `docker` 위치가 다르면 SSH에서 `which docker`로 확인한 경
 
 ```bash
 sudo docker stop kmu-performance
-sudo cp /volume1/docker/kmu-performance/data/backups/kmu-YYYYMMDD-HHMMSS.db \
-  /volume1/docker/kmu-performance/data/kmu.db
-sudo rm -f /volume1/docker/kmu-performance/data/kmu.db-wal \
-  /volume1/docker/kmu-performance/data/kmu.db-shm
+sudo cp /volume2/docker/kmu-performance/data/backups/kmu-YYYYMMDD-HHMMSS.db \
+  /volume2/docker/kmu-performance/data/kmu.db
+sudo rm -f /volume2/docker/kmu-performance/data/kmu.db-wal \
+  /volume2/docker/kmu-performance/data/kmu.db-shm
 sudo docker start kmu-performance
 ```
 
