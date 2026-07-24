@@ -1,6 +1,7 @@
 node_modules/
 .next/
 out/
+dist/
 *.tsbuildinfo
 next-env.d.ts
 # 생성 DB는 재현 가능하므로 커밋 제외(원하면 강제 추가)

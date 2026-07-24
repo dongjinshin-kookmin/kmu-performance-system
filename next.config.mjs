@@ -20,7 +20,10 @@ const nextConfig = {
         // 클라이언트에서 basePath를 참조할 수 있도록 노출
         env: { NEXT_PUBLIC_BASE_PATH: basePath },
       }
-    : {}),
+    : {
+        // NAS/Docker 배포 시 실행에 필요한 파일만 모은 경량 서버 번들을 생성한다.
+        output: "standalone",
+      }),
 };
 
 export default nextConfig;
