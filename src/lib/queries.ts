@@ -477,7 +477,7 @@ export function staffEval(id: number, half = STAFF_LATEST) {
   return db.prepare(
     `SELECT eval_id evalId, composite_score comp, raw_total rawTotal, score_scale scale, service_score service,
             gain_points gain, penalty_points penalty, adjustment_coef adj, mbo_rate mbo,
-            grade_abs abs, grade_rel rel, grade_final final, status, current_step step
+            grade_abs abs, grade_rel rel, grade_final final, status, current_step step, chair_comment chairC
      FROM fact_evaluation WHERE person_id=? AND cycle_id=?`
   ).get(id, half) as any;
 }

@@ -3,13 +3,16 @@ import { getSession, MASK_MIN } from "@/lib/rbac";
 import {
   canViewStaff, staffHeader, staffHalves, staffEval, staffAreas, staffTrend,
   staffPercentile, staffMbo, staffActivities, pickerStaff, STAFF_LATEST, staffRanks, staffFeedback, staffWorklog,
-  allStaffIds, staffDeptSize,
+  allStaffIds, staffDeptSize, unitKpis, unitMembers,
 } from "@/lib/queries";
+import { deptTypeOf } from "@/generator/staffData";
 import { Reveal, ArcGauge, GradeBadge, Meter, CountUp, Delta } from "@/components/ui";
 import { TrendChart } from "@/components/charts";
 import { RankWidget } from "@/components/RankWidget";
 import { FeedbackSection } from "@/components/Feedback";
 import { WorkCalendar } from "@/components/WorkCalendar";
+import { WorklogForm } from "@/components/WorklogForm";
+import { EvalForm } from "@/components/EvalForm";
 import { StaffMbo, StaffActivities } from "@/components/StaffMbo";
 import { PersonPicker } from "@/components/PersonPicker";
 import { STAFF_AREA, DEPT_TYPE_LABEL } from "@/lib/colors";
@@ -79,6 +82,15 @@ export default async function StaffCard({ params, searchParams }: { params: Prom
   const isFunc = h.familyTop === "FUNCTIONAL";
   const picker = pickerStaff(s);
 
+  // MVP 쓰기 경로 — 본인(STAFF)은 업무기록 작성, 같은 부서 평가자(팀장/부서장)는 5영역 평가 입력.
+  const isSelf = s.role === "STAFF" && s.viewer === id;
+  const isEvaluator = (s.role === "TEAM_LEAD" || s.role === "DEPT_HEAD") && !isFunc; // 5영역(일반·기술직)만
+  const dt = isSelf ? deptTypeOf(h.deptType) : null;
+  const worklogKpis = isSelf ? unitKpis(h.orgId, half).map((k: any) => ({ code: k.code, name: k.name })) : [];
+  const deptCategories = dt ? Array.from(new Set([...dt.mbo, ...dt.innov, ...dt.edu])) : [];
+  const worklogMembers = isSelf ? unitMembers(h.orgId, half).filter((m: any) => m.id !== id).map((m: any) => ({ id: m.id, name: m.name })) : [];
+  const evalAreas = isEvaluator ? areas.map((a: any) => ({ area: a.area, raw: a.raw, max: a.max })) : [];
+
   return (
     <main className="wrap" style={{ padding: "2rem 0 4rem" }}>
       {picker.enabled && (
@@ -109,6 +121,13 @@ export default async function StaffCard({ params, searchParams }: { params: Prom
           </div>
         </div>
       </Reveal>
+
+      {/* MVP ① 직원 본인 — 업무기록 작성 폼 (저장 즉시 아래 업무일지 반영) */}
+      {isSelf && (
+        <Reveal className="panel" style={{ padding: "1.5rem 1.6rem", margin: "22px 0", borderColor: "var(--accent)" }}>
+          <WorklogForm personId={id} half={half} kpis={worklogKpis} deptCategories={deptCategories} members={worklogMembers} />
+        </Reveal>
+      )}
 
       {/* 종합 게이지 + 내 위치(랭킹) */}
       <section style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 20, margin: "26px 0", alignItems: "stretch" }}>
@@ -224,6 +243,13 @@ export default async function StaffCard({ params, searchParams }: { params: Prom
           </div>
           <p style={{ fontSize: "0.74rem", color: "var(--muted)", margin: "6px 0 16px", lineHeight: 1.6 }}>선택 반기 동안 본인이 스스로 작성한 업무 실적을 카드로 나열합니다. 각 카드는 수행 기간·업무책임자(부서장/팀장)·업무수행자·증빙 문서·연결 KPI를 담고 있으며, 카드를 펼치면 자기작성 수행 내용 전문을 볼 수 있습니다.</p>
           <WorkCalendar items={worklog} year={halfYear} staffId={id} half={half} />
+        </Reveal>
+      )}
+
+      {/* MVP ② 평가자 — 위 업무일지를 근거로 5영역 점수·코멘트 입력 */}
+      {isEvaluator && (
+        <Reveal className="panel" style={{ padding: "1.5rem 1.6rem", marginBottom: 20, borderColor: "var(--area-I)" }} delay={0.04}>
+          <EvalForm evalId={ev.evalId} personId={id} areas={evalAreas} comment={ev.chairC ?? ""} status={ev.status} />
         </Reveal>
       )}
 
